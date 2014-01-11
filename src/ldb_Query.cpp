@@ -44,6 +44,44 @@ void Query::where(const Constraint &constraint)
 	m_constraints.push_back(&constraint);
 }
 
+int Query::build(char *buffer, size_t size) const
+{
+    int res;
+    int len = 0;
+
+    for (Joins::const_iterator i = m_joins.begin(), end = m_joins.end(); i != end; ++i)
+    {
+        res = (*i)->build(buffer + len, size - len);
+
+        if (LIKELY(res > 0))
+            len += res;
+        else
+            return -1;
+    }
+
+    if (!m_constraints.empty())
+    {
+        res = snprintf(buffer + len, size - len, " WHERE ");
+
+        if (LIKELY(res > 0))
+            len += res;
+        else
+            return -1;
+
+        for (Constraints::const_iterator i = m_constraints.begin(), end = m_constraints.end(); i != end; ++i)
+        {
+            res = (*i)->build(buffer + len, size - len);
+
+            if (LIKELY(res > 0))
+                len += res;
+            else
+                return -1;
+        }
+    }
+
+    return len;
+}
+
 
 Select::Select(const Table &from) :
 	m_from(&from)
@@ -100,35 +138,12 @@ int Select::build(char *buffer, size_t size) const
 		else
 			return -1;
 
-		for (Joins::const_iterator i = m_joins.begin(), end = m_joins.end(); i != end; ++i)
-		{
-			res = (*i)->build(buffer + len, size - len);
+		res = Query::build(buffer + len, size - len);
 
-			if (LIKELY(res > 0))
-				len += res;
-			else
-				return -1;
-		}
-
-		if (!m_constraints.empty())
-		{
-			res = snprintf(buffer + len, size - len, " WHERE ");
-
-			if (LIKELY(res > 0))
-				len += res;
-			else
-				return -1;
-
-			for (Constraints::const_iterator i = m_constraints.begin(), end = m_constraints.end(); i != end; ++i)
-			{
-				res = (*i)->build(buffer + len, size - len);
-
-				if (LIKELY(res > 0))
-					len += res;
-				else
-					return -1;
-			}
-		}
+        if (LIKELY(res >= 0))
+            len += res;
+        else
+            return -1;
 	}
 
 	return len;
@@ -221,12 +236,20 @@ int Insert::build(char *buffer, size_t size) const
 			else
 				return -1;
 
-			return len;
+	        res = Query::build(buffer + len, size - len);
+
+	        if (LIKELY(res >= 0))
+	            len += res;
+	        else
+	            return -1;
+
+	        return len;
 		}
 	}
 
 	return -1;
 }
+
 
 Update::Update(const Table &table) :
 	m_table(&table)
@@ -289,25 +312,12 @@ int Update::build(char *buffer, size_t size) const
 					return -1;
 			}
 
-			if (!m_constraints.empty())
-			{
-				res = snprintf(buffer + len, size - len, " WHERE ");
+	        res = Query::build(buffer + len, size - len);
 
-				if (LIKELY(res > 0))
-					len += res;
-				else
-					return -1;
-
-				for (Constraints::const_iterator i = m_constraints.begin(), end = m_constraints.end(); i != end; ++i)
-				{
-					res = (*i)->build(buffer + len, size - len);
-
-					if (LIKELY(res > 0))
-						len += res;
-					else
-						return -1;
-				}
-			}
+	        if (LIKELY(res >= 0))
+	            len += res;
+	        else
+	            return -1;
 
 			return len;
 		}
@@ -315,6 +325,7 @@ int Update::build(char *buffer, size_t size) const
 
 	return -1;
 }
+
 
 Delete::Delete(const Table &from) :
     m_from(&from)
@@ -325,8 +336,24 @@ Delete::~Delete()
 
 int Delete::build(char *buffer, size_t size) const
 {
-    return snprintf(buffer, size, "DELETE FROM %s", m_from->name());
+    int len = 0;
+    int res = snprintf(buffer, size, "DELETE FROM %s", m_from->name());
+
+    if (LIKELY(res > 0))
+        len += res;
+    else
+        return -1;
+
+    res = Query::build(buffer + len, size - len);
+
+    if (LIKELY(res >= 0))
+        len += res;
+    else
+        return -1;
+
+    return len;
 }
+
 
 SelectEntity::SelectEntity(const Entity &entity) :
     m_entity(entity)

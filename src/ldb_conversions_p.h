@@ -19,15 +19,15 @@
 #ifndef LDB_CONVERSIONS_P_H_
 #define LDB_CONVERSIONS_P_H_
 
-#include <liquiddb/Database>
-#include <liquiddb/Query>
-#include <liquiddb/Table>
-#include <liquiddb/Field>
-#include <liquiddb/DataSet>
+#include "ldb_Database.h"
+#include "ldb_Query.h"
+#include "ldb_Table.h"
+#include "ldb_Field.h"
+#include "ldb_DataSet.h"
 
-#include <sqlite3.h>
 #include <brolly/assert.h>
 #include <efc/ScopedPointer>
+#include <sqlite3.h>
 
 #include <cstdlib>
 #include <cstdio>

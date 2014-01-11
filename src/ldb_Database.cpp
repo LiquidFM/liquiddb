@@ -65,12 +65,11 @@ bool Database::exsitst(const Table &table) const
 	char buffer[BufferSize];
 	bool res = false;
 
-	int len = snprintf(buffer, BufferSize - 1, "SELECT name FROM sqlite_master WHERE type='table' AND name='%s'", table.name());
+	int len = snprintf(buffer, BufferSize, "SELECT name FROM sqlite_master WHERE type='table' AND name='%s'", table.name());
 
 	if (LIKELY(len > 0))
 	{
 		sqlite3_stmt *statement;
-		buffer[len] = 0;
 
 		if (sqlite3_prepare_v2(m_db, buffer, len, &statement, NULL) == SQLITE_OK)
 		{
@@ -90,7 +89,7 @@ bool Database::create(const Table &table)
     char buffer[BufferSize];
 
     m_error = SQLITE_OK;
-    int len = snprintf(buffer, (BufferSize - 1), "CREATE TABLE %s (%s INTEGER PRIMARY KEY ASC AUTOINCREMENT", table.name(), table.primaryKeyColumn()->name);
+    int len = snprintf(buffer, BufferSize, "CREATE TABLE %s (%s INTEGER PRIMARY KEY ASC AUTOINCREMENT", table.name(), table.primaryKeyColumn()->name);
 
     if (LIKELY(len > 0))
     {
@@ -102,13 +101,13 @@ bool Database::create(const Table &table)
             if (table.column(i) == table.primaryKeyColumn())
                 continue;
 
-            if (UNLIKELY(BufferSize - 1 <= size))
+            if (UNLIKELY(BufferSize <= size))
             {
                 m_error = SQLITE_NOMEM;
                 return false;
             }
 
-            len = snprintf(buffer + size, (BufferSize - 1) - size, ", %s %s", table.column(i)->name, typeToString(table.column(i)->type));
+            len = snprintf(buffer + size, (BufferSize) - size, ", %s %s", table.column(i)->name, typeToString(table.column(i)->type));
 
             if (LIKELY(len > 0))
                 size += len;
@@ -119,11 +118,11 @@ bool Database::create(const Table &table)
             }
         }
 
-        len = snprintf(buffer + size, (BufferSize - 1) - size, ")");
+        len = snprintf(buffer + size, (BufferSize) - size, ")");
 
         if (LIKELY(len > 0))
         {
-            buffer[size += len] = 0;
+            size += len;
 
             if (sqlite3_prepare_v2(m_db, buffer, size, &statement, NULL) == SQLITE_OK)
             {
@@ -147,12 +146,10 @@ bool Database::create(const Table &table)
 
         for (int i = 0, count = table.indexesCount(); i < count; ++i)
         {
-            len = snprintf(buffer, (BufferSize - 1), "CREATE INDEX %s ON %s(%s)", table.index(i)->name, table.name(), table.index(i)->column->name);
+            len = snprintf(buffer, (BufferSize), "CREATE INDEX %s ON %s(%s)", table.index(i)->name, table.name(), table.index(i)->column->name);
 
             if (LIKELY(len > 0))
             {
-                buffer[len] = 0;
-
                 if (sqlite3_prepare_v2(m_db, buffer, len, &statement, NULL) == SQLITE_OK)
                 {
                     sqlite3_step(statement);
@@ -217,12 +214,11 @@ bool Database::perform(const Insert &query, Id &id)
 {
 	ASSERT(m_db != NULL);
 	char buffer[BufferSize];
-	int res = query.build(buffer, BufferSize - 1);
+	int res = query.build(buffer, BufferSize);
 
 	if (LIKELY(res > 0))
 	{
 		sqlite3_stmt *statement;
-		buffer[res] = 0;
 
 		if (sqlite3_prepare_v2(m_db, buffer, res, &statement, NULL) == SQLITE_OK)
 		{
@@ -246,12 +242,11 @@ bool Database::perform(const Select &query, DataSet &data)
 {
 	ASSERT(m_db != NULL);
 	char buffer[BufferSize];
-	int res = query.build(buffer, BufferSize - 1);
+	int res = query.build(buffer, BufferSize);
 
 	if (LIKELY(res > 0))
 	{
 		sqlite3_stmt *statement;
-		buffer[res] = 0;
 
 		if (sqlite3_prepare_v2(m_db, buffer, res, &statement, NULL) == SQLITE_OK)
 		{
@@ -336,12 +331,11 @@ bool Database::performQuery(const Query &query)
 {
     ASSERT(m_db != NULL);
     char buffer[BufferSize];
-    int res = query.build(buffer, BufferSize - 1);
+    int res = query.build(buffer, BufferSize);
 
     if (LIKELY(res > 0))
     {
         sqlite3_stmt *statement;
-        buffer[res] = 0;
 
         if (sqlite3_prepare_v2(m_db, buffer, res, &statement, NULL) == SQLITE_OK)
         {

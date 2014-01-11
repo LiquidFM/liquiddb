@@ -25,6 +25,7 @@
 #include "ldb_EntityTable.h"
 
 #include <brolly/assert.h>
+#include <platform/utils.h>
 #include <cstddef>
 
 

@@ -53,7 +53,7 @@ public:
 	void join(const Join &link);
 	void where(const Constraint &constraint);
 
-	virtual int build(char *buffer, size_t size) const = 0;
+	virtual int build(char *buffer, size_t size) const;
 
 protected:
 	Joins m_joins;
