@@ -195,11 +195,72 @@ bool Storage::addProperty(const Entity &entity, const Entity &property, const ch
 
 bool Storage::renameProperty(const Entity &entity, const Entity &property, const char *name)
 {
+    if (entity.properties().find(property.id()) != entity.properties().end())
+    {
+        Entity::Id entityId = entity.id();
+        Entity::Id propertyId = property.id();
+
+        PropertiesTable propertiesTable;
+        Update query(propertiesTable);
+
+        query.update(propertiesTable.column(PropertiesTable::Name), name);
+
+        Field entityIdField(propertiesTable, propertiesTable.column(PropertiesTable::EntityId));
+        ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
+
+        Field propertyIdField(propertiesTable, propertiesTable.column(PropertiesTable::PropertyId));
+        ConstConstraint constraint2(propertyIdField, Constraint::Equal, &propertyId);
+
+        GroupConstraint constraint(GroupConstraint::And);
+        constraint.add(constraint1);
+        constraint.add(constraint2);
+
+        query.where(constraint);
+
+        if (m_database.perform(query))
+        {
+            entity.m_implementation->rename(property, name);
+
+            return true;
+        }
+    }
+
     return false;
 }
 
 bool Storage::removeProperty(const Entity &entity, const Entity &property)
 {
+    if (entity != property &&
+        entity.type() == Entity::Composite &&
+        entity.properties().find(property.id()) != entity.properties().end())
+    {
+        Entity::Id entityId = entity.id();
+        Entity::Id propertyId = property.id();
+
+        PropertiesTable propertiesTable;
+        Delete query(propertiesTable);
+
+        Field entityIdField(propertiesTable, propertiesTable.column(PropertiesTable::EntityId));
+        ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
+
+        Field propertyIdField(propertiesTable, propertiesTable.column(PropertiesTable::PropertyId));
+        ConstConstraint constraint2(propertyIdField, Constraint::Equal, &propertyId);
+
+        GroupConstraint constraint(GroupConstraint::And);
+        constraint.add(constraint1);
+        constraint.add(constraint2);
+
+        query.where(constraint);
+
+        if (m_database.perform(query))
+        {
+            entity.m_implementation->remove(property);
+            property.m_implementation->removeParent(entity);
+
+            return true;
+        }
+    }
+
     return false;
 }
 
