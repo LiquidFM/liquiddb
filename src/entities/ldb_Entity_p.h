@@ -54,16 +54,13 @@ public:
     const Properties &properties() const { return m_properties; }
     const EntityTitle &title() const { return m_title; }
 
-
-    const Property &at(Id id) const { return (*m_properties.find(id)).second; }
-
 public:
     void addParent(const Entity &parent) { m_parents.insert(Parents::value_type(parent.id(), parent)); }
     void removeParent(const Entity &parent) { m_parents.erase(parent.id()); }
 
-    void add(const Entity &item, const ::EFC::String &name) { m_properties.insert(Properties::value_type(item.id(), Property(item, name))); }
-    void rename(const Entity &item, const ::EFC::String &name) { m_properties[item.id()].name = name; }
-    void remove(const Entity &item) { m_properties.erase(item.id()); }
+    void add(const Entity &property, const char *name) { m_properties.insert(Properties::value_type(property.id(), Property(property, name))); }
+    void rename(const Entity &property, const char *name) { m_properties[property.id()].name = name; }
+    void remove(const Entity &property) { m_properties.erase(property.id()); }
 
 private:
     Id m_id;

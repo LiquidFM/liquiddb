@@ -47,8 +47,8 @@ public:
     Entity createEntity(Entity::Type type, const char *name, const char *title);
     bool removeEntity(const Entity &entity);
 
-    bool addProperty(const Entity &entity, const Entity &property, const ::EFC::String &name);
-    bool renameProperty(const Entity &entity, const Entity &property, const ::EFC::String &name);
+    bool addProperty(const Entity &entity, const Entity &property, const char *name);
+    bool renameProperty(const Entity &entity, const Entity &property, const char *name);
     bool removeProperty(const Entity &entity, const Entity &property);
 
     EntityValue addValue(const Entity &entity);

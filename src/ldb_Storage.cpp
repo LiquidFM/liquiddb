@@ -163,12 +163,37 @@ bool Storage::removeEntity(const Entity &entity)
     return true;
 }
 
-bool Storage::addProperty(const Entity &entity, const Entity &property, const ::EFC::String &name)
+bool Storage::addProperty(const Entity &entity, const Entity &property, const char *name)
 {
+    if (entity != property &&
+        entity.type() == Entity::Composite &&
+        entity.properties().find(property.id()) == entity.properties().end() &&
+        !isThereCycles(entity, property))
+    {
+        Entity::Id id;
+        Entity::Id entityId = entity.id();
+        Entity::Id propertyId = property.id();
+
+        PropertiesTable propertiesTable;
+        Insert query(propertiesTable);
+
+        query.insert(propertiesTable.column(PropertiesTable::EntityId), &entityId);
+        query.insert(propertiesTable.column(PropertiesTable::PropertyId), &propertyId);
+        query.insert(propertiesTable.column(PropertiesTable::Name), name);
+
+        if (m_database.perform(query, id))
+        {
+            entity.m_implementation->add(property, name);
+            property.m_implementation->addParent(entity);
+
+            return true;
+        }
+    }
+
     return false;
 }
 
-bool Storage::renameProperty(const Entity &entity, const Entity &property, const ::EFC::String &name)
+bool Storage::renameProperty(const Entity &entity, const Entity &property, const char *name)
 {
     return false;
 }
@@ -288,8 +313,7 @@ bool Storage::loadProperties()
 
                 if (q != end)
                 {
-                    ::EFC::String name(nameValue.value, nameValue.size);
-                    (*i).second.m_implementation->add((*q).second, name);
+                    (*i).second.m_implementation->add((*q).second, nameValue.value);
                     (*q).second.m_implementation->addParent((*i).second);
                 }
                 else
