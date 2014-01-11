@@ -30,10 +30,10 @@ namespace LiquidDb {
 
 EntitiesTable::EntitiesTable() :
     m_columns({
-        { Column::BigInt,   "ID"                                     },
-        { Column::SmallInt, "TYPE"                                   },
-        { Column::Text,     "NAME"                                   },
-        { Column::Text,     "TITLE"                                  }
+        { Column::BigInt,   "ID"    },
+        { Column::SmallInt, "TYPE"  },
+        { Column::Text,     "NAME"  },
+        { Column::Text,     "TITLE" }
     })
 {}
 
@@ -42,7 +42,7 @@ EntitiesTable::~EntitiesTable()
 
 const char *EntitiesTable::name() const
 {
-    return "ENTITY";
+    return "ENTITIES";
 }
 
 const Table::Column *EntitiesTable::primaryKeyColumn() const
