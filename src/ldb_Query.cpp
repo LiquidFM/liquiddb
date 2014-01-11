@@ -18,12 +18,12 @@
  */
 #include "ldb_Query.h"
 #include "ldb_conversions_p.h"
+#include "ldb_Join.h"
+#include "ldb_Constraint.h"
+
 #include "structure/ldb_EntitiesTable.h"
 #include "structure/ldb_PropertiesTable.h"
-
-#include <liquiddb/Join>
-#include <liquiddb/Constraint>
-#include <liquiddb/Entity>
+#include "entities/ldb_Entity.h"
 
 
 namespace LiquidDb {

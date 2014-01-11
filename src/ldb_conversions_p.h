@@ -80,6 +80,9 @@ namespace {
 
 	int printValue(char *buffer, size_t size, const Table::Column *column, const void *value, size_t valueSize)
 	{
+	    if (value == NULL)
+            return snprintf(buffer, size, "NULL");
+
 		switch (column->type)
 		{
 			case Table::Column::Int:
