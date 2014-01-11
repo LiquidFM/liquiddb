@@ -5,64 +5,53 @@ namespace LiquidDb {
 
 EntityTitle::EntityTitle(const char *format)
 {
-//    ::EFC::String token;
-//    token.reserve(m_format.size());
-//
-//    for (::EFC::String::size_type pos = 0; pos < m_format.size(); ++pos)
-//        if (m_format.at(pos) == '$')
-//            dollarToken(pos, token, m_format);
-//        else
-//            token.append(m_format.at(pos));
-//
-//    if (!token.isEmpty())
-//    {
-//        token.truncate(token.size());
-//        m_items.push_back(Token(Token::Text, token));
-//    }
-}
+    if (format)
+    {
+        const char *start = format;
+        Token::Type type = Token::Text;
 
-bool EntityTitle::isValid() const
-{
-    return !m_items.empty();
-}
+        while (*format)
+            if (*format == '$' && format[1] == '{')
+            {
+                if (type == Token::Property)
+                {
+                    m_items.clear();
+                    return;
+                }
 
-void EntityTitle::dollarToken(::EFC::String::size_type &pos, ::EFC::String &token, const ::EFC::String &source)
-{
-//    if (pos + 1 < source.size())
-//        if (source.at(pos + 1) == '{')
-//            nameToken(++pos, token, source);
-//        else
-//            token.append(source.at(pos));
-//    else
-//        token.append(source.at(pos));
-}
+                if (format - start > 0)
+                    if (UNLIKELY(m_items.push_back({ type, ::EFC::String(start, format - start) }) == false))
+                    {
+                        m_items.clear();
+                        return;
+                    }
 
-void EntityTitle::nameToken(::EFC::String::size_type &pos, ::EFC::String &token, const ::EFC::String &source)
-{
-//    if (pos + 2 < source.size())
-//    {
-//        ::EFC::String name;
-//
-//        for (++pos; pos < source.size(); ++pos)
-//            if (source[pos] == '}')
-//            {
-//                if (!name.isEmpty())
-//                {
-//                    token.truncate(token.size());
-//                    m_items.push_back(Token(Token::Text, token));
-//                    m_items.push_back(Token(Token::Property, name));
-//
-//                    token.clear();
-//                    token.reserve(source.size());
-//                }
-//
-//                break;
-//            }
-//            else
-//                name.append(source.at(pos));
-//    }
-//    else
-//        token.append(source.at(pos));
+                type = Token::Property;
+                start = (format += 2);
+            }
+            else
+                if (*format == '}' && type == Token::Property)
+                {
+                    if (format - start > 0)
+                        if (UNLIKELY(m_items.push_back({ type, ::EFC::String(start, format - start) }) == false))
+                        {
+                            m_items.clear();
+                            return;
+                        }
+
+                    type = Token::Text;
+                    start = (++format);
+                }
+                else
+                    ++format;
+
+        if (format - start > 0 && type == Token::Text)
+            if (UNLIKELY(m_items.push_back({ Token::Text, ::EFC::String(start, format - start) }) == false))
+            {
+                m_items.clear();
+                return;
+            }
+    }
 }
 
 }

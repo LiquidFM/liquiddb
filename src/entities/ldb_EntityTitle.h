@@ -3,6 +3,7 @@
 
 #include <efc/List>
 #include <efc/String>
+#include <platform/platform.h>
 
 
 namespace LiquidDb {
@@ -20,10 +21,17 @@ public:
         };
 
     public:
+#if PLATFORM_COMPILER_SUPPORTS(MOVE_SEMANTIC)
+        Token(Type type, ::EFC::String &&string) :
+            m_type(type),
+            m_string(std::move(string))
+        {}
+#else
         Token(Type type, const ::EFC::String &string) :
             m_type(type),
             m_string(string)
         {}
+#endif
 
         Type type() const { return m_type; }
         const ::EFC::String &string() const { return m_string; }
@@ -39,14 +47,10 @@ public:
 public:
     EntityTitle(const char *format);
 
-    bool isValid() const;
+    bool isValid() const { return !m_items.empty(); }
 
     const_iterator begin() const { return m_items.begin(); }
     const_iterator end() const { return m_items.end(); }
-
-private:
-    void dollarToken(::EFC::String::size_type &pos, ::EFC::String &token, const ::EFC::String &source);
-    void nameToken(::EFC::String::size_type &pos, ::EFC::String &token, const ::EFC::String &source);
 
 private:
     Container m_items;
