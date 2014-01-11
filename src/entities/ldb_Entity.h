@@ -91,6 +91,7 @@ struct Entity::Property
 {
     Property()
     {}
+
     Property(const Entity &entity, const ::EFC::String &name) :
         entity(entity),
         name(name)

@@ -22,7 +22,6 @@
  * along with liquiddb. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ldb_EntityValue.h"
 #include "ldb_EntityValue_p.h"
 
 
@@ -60,14 +59,14 @@ CompositeEntityValue::CompositeEntityValue(const EntityValue &value) :
     EntityValue(value)
 {}
 
-CompositeEntityValue::Values CompositeEntityValue::values(const Entity &property) const
+const CompositeEntityValue::Values &CompositeEntityValue::values(const Entity &property) const
 {
-    return CompositeEntityValue::Values();
+    return static_cast<CompositeEntityValue::Implementation *>(m_implementation.get())->values(property);
 }
 
 void CompositeEntityValue::resetValue()
 {
-
+    return static_cast<CompositeEntityValue::Implementation *>(m_implementation.get())->resetValue();
 }
 
 }

@@ -114,48 +114,43 @@ public:
 //        }
     }
 
-    virtual void resetValue()
+    void resetValue()
     {
         m_value = ::EFC::Variant();
     }
 
-    void add(const EntityValue &value)
+    void add(const Entity &property, const EntityValue &value)
     {
-        m_items[value.entity()][value.id()] = value;
+        m_items[property][value.id()] = value;
         m_value = ::EFC::Variant();
     }
 
-    void add(const Values &values)
+    void add(const Entity &property, const Values &values)
     {
-        InternalMap &map = m_items[values.front().entity()];
+        m_items[property] = values;
+        m_value = ::EFC::Variant();
+    }
+
+    void remove(const Entity &property, const EntityValue &value)
+    {
+        m_items[property].erase(value.id());
+        m_value = ::EFC::Variant();
+    }
+
+    void remove(const Entity &property, const Values &values)
+    {
+        Values &map = m_items[property];
 
         for (Values::const_iterator i = values.begin(), end = values.end(); i != end; ++i)
-            map[i->id()] = *i;
-
-        m_value = ::EFC::Variant();
-    }
-
-    void remove(const EntityValue &value)
-    {
-        InternalMap &map = m_items[value.entity()];
-        map.erase(value.id());
-        m_value = ::EFC::Variant();
-    }
-
-    void remove(const Values &values)
-    {
-        InternalMap &map = m_items[values.front().entity()];
-
-        for (Values::const_iterator i = values.begin(), end = values.end(); i != end; ++i)
-            map.erase(i->id());
+            map.erase((*i).first);
 
         m_value = ::EFC::Variant();
     }
 
     EntityValue value(const Entity &property, Id id)
     {
-        InternalMap &map = m_items[property];
-        InternalMap::iterator index = map.find(id);
+        Values &map = m_items[property];
+        Values::iterator index = map.find(id);
 
         if (index == map.end())
             return EntityValue();
@@ -163,9 +158,13 @@ public:
             return (*index).second;
     }
 
+    const Values &values(const Entity &property)
+    {
+        return m_items[property];
+    }
+
 private:
-    typedef ::EFC::Map<Id, EntityValue> InternalMap;
-    typedef ::EFC::Map<Entity, InternalMap> Map;
+    typedef ::EFC::Map<Entity, Values> Map;
     Map m_items;
 };
 

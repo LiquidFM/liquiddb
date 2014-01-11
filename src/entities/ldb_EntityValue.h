@@ -59,7 +59,7 @@ protected:
 protected:
     EntityValue(Holder &holder);
 
-private:
+protected:
     Holder m_implementation;
 };
 
@@ -67,30 +67,18 @@ private:
 class CompositeEntityValue : public EntityValue
 {
 public:
-    typedef ::EFC::List<EntityValue> Values;
+    typedef ::EFC::Map<Id, EntityValue> Values;
 
 public:
     CompositeEntityValue();
     CompositeEntityValue(const EntityValue &value);
 
-    Values values(const Entity &property) const;
+    const Values &values(const Entity &property) const;
     void resetValue();
 
 private:
     class Implementation;
 };
-
-
-///* Meta-function "EntityValueType" */
-//template <Database::EntityType EntityType> struct EntityValueType {};
-//template <> struct EntityValueType<Database::Int>      { typedef int       type; };
-//template <> struct EntityValueType<Database::String>   { typedef QString   type; };
-//template <> struct EntityValueType<Database::Date>     { typedef QDate     type; };
-//template <> struct EntityValueType<Database::Time>     { typedef QTime     type; };
-//template <> struct EntityValueType<Database::DateTime> { typedef QDateTime type; };
-//template <> struct EntityValueType<Database::Memo>     { typedef QString   type; };
-//template <> struct EntityValueType<Database::Rating>   { typedef int       type; };
-//template <> struct EntityValueType<Database::Path>     { typedef QString   type; };
 
 }
 
