@@ -63,7 +63,6 @@ private:
     void skip(const Entity &property, int &column) const;
 
 private:
-    SelectEntity m_query;
     mutable bool m_afterLast;
     mutable bool m_beforeFirst;
 };

@@ -25,3 +25,84 @@
 #include "ldb_EntityValueReader.h"
 
 
+namespace LiquidDb {
+
+EntityValueReader::EntityValueReader() :
+    m_afterLast(false),
+    m_beforeFirst(false)
+{}
+
+EntityValueReader::EntityValueReader(const SelectEntity &query)
+{}
+
+EntityValue EntityValueReader::next() const
+{
+    return EntityValue();
+}
+
+void EntityValueReader::refresh()
+{
+
+}
+
+void EntityValueReader::addValue(const EntityValue &value, const EntityValue &property)
+{
+
+}
+
+void EntityValueReader::addValue(const EntityValue &value, const CompositeEntityValue::Values &values)
+{
+
+}
+
+void EntityValueReader::takeValue(const EntityValue &value, const EntityValue &property)
+{
+
+}
+
+void EntityValueReader::updateValue(const EntityValue &value, const ::EFC::Variant &newValue)
+{
+
+}
+
+void EntityValueReader::removeValue(const EntityValue &value, const EntityValue &property)
+{
+
+}
+
+void EntityValueReader::removeValue(const EntityValue &value, const CompositeEntityValue::Values &values)
+{
+
+}
+
+EntityValue EntityValueReader::createValue(const Entity &entity, EntityValue::Id id)
+{
+    return EntityValue();
+}
+
+EntityValue EntityValueReader::createValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value)
+{
+    return EntityValue();
+}
+
+EntityValue EntityValueReader::doNext() const
+{
+    return EntityValue();
+}
+
+EntityValue EntityValueReader::value(const Entity &entity, Entity::Id id, int column) const
+{
+    return EntityValue();
+}
+
+void EntityValueReader::property(const EntityValue &value, const Entity &property, int &column) const
+{
+
+}
+
+void EntityValueReader::skip(const Entity &property, int &column) const
+{
+
+}
+
+}
