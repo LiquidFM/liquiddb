@@ -27,6 +27,7 @@
 #include <efc/Map>
 #include <liquiddb/Database>
 #include <liquiddb/EntityValue>
+#include <liquiddb/UndoStack>
 
 
 namespace LiquidDb {
@@ -82,6 +83,7 @@ private:
 private:
     Entities m_entities;
     Database m_database;
+    UndoStack m_undoStack;
 };
 
 }

@@ -108,7 +108,11 @@ Entity Storage::createEntity(Entity::Type type, const char *name, const char *ti
         EntityTable entityTable(id, type);
 
         if (m_database.create(entityTable))
-            return Entity(id, type, name, title);
+        {
+            Entity entity(id, type, name, title);
+            m_undoStack.undoAddEntity(entity);
+            return entity;
+        }
     }
 
     return Entity();
@@ -162,6 +166,7 @@ bool Storage::removeEntity(const Entity &entity)
             (*i).second.entity.m_implementation->removeParent(entity);
 
         m_entities.erase(entity.id());
+        m_undoStack.undoRemoveEntity(entity);
     }
 
     return true;
@@ -190,6 +195,7 @@ bool Storage::addProperty(const Entity &entity, const Entity &property, const ch
         {
             entity.m_implementation->add(property, name);
             property.m_implementation->addParent(entity);
+            m_undoStack.undoAddProperty(entity, property);
 
             return true;
         }
@@ -224,7 +230,8 @@ bool Storage::renameProperty(const Entity &entity, const Entity &property, const
 
     if (m_database.perform(query))
     {
-        entity.m_implementation->rename(property, name);
+        ::EFC::String oldname = std::move(entity.m_implementation->rename(property, name));
+        m_undoStack.undoRenameProperty(entity, property, oldname);
 
         return true;
     }
@@ -258,8 +265,9 @@ bool Storage::removeProperty(const Entity &entity, const Entity &property)
 
     if (m_database.perform(query))
     {
-        entity.m_implementation->remove(property);
+        ::EFC::String name = std::move(entity.m_implementation->remove(property));
         property.m_implementation->removeParent(entity);
+        m_undoStack.undoRemoveProperty(entity, property, name);
 
         return true;
     }
@@ -304,6 +312,7 @@ bool Storage::addValue(const EntityValue &entityValue, const EntityValue &proper
         if (m_database.perform(query, id))
         {
             EntityValueReader::addValue(entityValue, propertyValue);
+            m_undoStack.undoAddValue(entityValue, propertyValue);
 
             return true;
         }
@@ -355,6 +364,7 @@ bool Storage::addValue(const EntityValue &entityValue, const EntityValue::List &
         }
     }
 
+    m_undoStack.undoAddValue(entityValue, propertyValues);
     return true;
 }
 
@@ -430,7 +440,8 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
 
             if (m_database.perform(query))
             {
-                EntityValueReader::updateValue(value, newValue);
+                ::EFC::Variant oldValue = std::move(EntityValueReader::updateValue(value, newValue));
+                m_undoStack.undoUpdateValue(value, oldValue);
                 return true;
             }
 
@@ -444,7 +455,8 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
 
             if (m_database.perform(query))
             {
-                EntityValueReader::updateValue(value, newValue);
+                ::EFC::Variant oldValue = std::move(EntityValueReader::updateValue(value, newValue));
+                m_undoStack.undoUpdateValue(value, oldValue);
                 return true;
             }
 
@@ -461,7 +473,8 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
 
             if (m_database.perform(query))
             {
-                EntityValueReader::updateValue(value, newValue);
+                ::EFC::Variant oldValue = std::move(EntityValueReader::updateValue(value, newValue));
+                m_undoStack.undoUpdateValue(value, oldValue);
                 return true;
             }
 
@@ -512,6 +525,7 @@ bool Storage::removeValue(const EntityValue &entityValue, const EntityValue &pro
     if (m_database.perform(query))
     {
         EntityValueReader::takeValue(entityValue, propertyValue);
+        m_undoStack.undoRemoveValue(entityValue, propertyValue);
         return true;
     }
 

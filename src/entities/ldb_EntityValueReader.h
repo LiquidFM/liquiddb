@@ -49,7 +49,7 @@ public:
 
     static void addValue(const EntityValue &value, const EntityValue &property);
     static void takeValue(const EntityValue &value, const EntityValue &property);
-    static void updateValue(const EntityValue &value, const ::EFC::Variant &newValue);
+    static ::EFC::Variant updateValue(const EntityValue &value, const ::EFC::Variant &newValue);
     static void removeValue(const EntityValue &value, const EntityValue &property);
     static void removeValue(const EntityValue &value, const CompositeEntityValue::Values &values);
     static EntityValue createValue(const Entity &entity, EntityValue::Id id);

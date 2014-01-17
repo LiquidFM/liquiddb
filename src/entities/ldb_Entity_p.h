@@ -59,8 +59,22 @@ public:
     void removeParent(const Entity &parent) { m_parents.erase(parent.id()); }
 
     void add(const Entity &property, const char *name) { m_properties.insert(Properties::value_type(property.id(), Property(property, name))); }
-    void rename(const Entity &property, const char *name) { m_properties[property.id()].name = name; }
-    void remove(const Entity &property) { m_properties.erase(property.id()); }
+    ::EFC::String rename(const Entity &property, const char *name)
+    {
+        Entity::Property &prop = m_properties[property.id()];
+        ::EFC::String tmp(std::move(prop.name));
+        prop.name = name;
+
+        return tmp;
+    }
+    ::EFC::String remove(const Entity &property)
+    {
+        Properties::iterator prop = m_properties.find(property.id());
+        ::EFC::String tmp(std::move((*prop).second.name));
+        m_properties.erase(prop);
+
+        return tmp;
+    }
 
 private:
     Id m_id;

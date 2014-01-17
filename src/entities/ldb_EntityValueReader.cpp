@@ -55,9 +55,9 @@ void EntityValueReader::takeValue(const EntityValue &value, const EntityValue &p
 
 }
 
-void EntityValueReader::updateValue(const EntityValue &value, const ::EFC::Variant &newValue)
+::EFC::Variant EntityValueReader::updateValue(const EntityValue &value, const ::EFC::Variant &newValue)
 {
-
+    return ::EFC::Variant();
 }
 
 void EntityValueReader::removeValue(const EntityValue &value, const EntityValue &property)
