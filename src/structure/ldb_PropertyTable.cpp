@@ -42,6 +42,19 @@ PropertyTable::PropertyTable(Entity::Id id, Entity::Id propertyId) :
         m_name[0] = 0;
 }
 
+PropertyTable::PropertyTable(const Entity &entity, const Entity &property) :
+    m_columns({
+        { Column::BigInt, "ID"                },
+        { Column::BigInt, "ENTITY_VALUE_ID"   },
+        { Column::BigInt, "PROPERTY_VALUE_ID" }
+    })
+{
+    int res = snprintf(m_name, MaxLengthOfName, "ENTITY_%" PRId64 "_PROPERTY_%" PRId64, entity.id(), property.id());
+
+    if (UNLIKELY(res < 0))
+        m_name[0] = 0;
+}
+
 PropertyTable::~PropertyTable()
 {}
 

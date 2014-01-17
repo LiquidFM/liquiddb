@@ -53,6 +53,7 @@ public:
 
 public:
     PropertyTable(Entity::Id id, Entity::Id propertyId);
+    PropertyTable(const Entity &entity, const Entity &property);
     virtual ~PropertyTable();
 
     virtual const char *name() const;

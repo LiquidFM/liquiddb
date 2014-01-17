@@ -169,7 +169,7 @@ void Insert::insert(const Table::Column *column, const void *value, size_t size)
 
 int Insert::build(char *buffer, size_t size) const
 {
-	int res = snprintf(buffer, size, "INSERT INTO %s (", m_into->name());
+	int res = snprintf(buffer, size, "INSERT INTO %s", m_into->name());
 
 	if (LIKELY(res > 0))
 	{
@@ -180,7 +180,7 @@ int Insert::build(char *buffer, size_t size) const
 			Values::const_iterator i = m_values.begin();
 			Values::const_iterator end = m_values.end();
 
-			res = snprintf(buffer + len, size - len, "%s", (*i).column->name);
+			res = snprintf(buffer + len, size - len, " (%s", (*i).column->name);
 
 			if (LIKELY(res > 0))
 				len += res;
@@ -242,9 +242,9 @@ int Insert::build(char *buffer, size_t size) const
 	            len += res;
 	        else
 	            return -1;
-
-	        return len;
 		}
+
+        return len;
 	}
 
 	return -1;

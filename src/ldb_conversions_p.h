@@ -87,16 +87,16 @@ namespace {
 		{
 			case Table::Column::Int:
 			case Table::Column::MediumInt:
-				return snprintf(buffer, size, "%u", *static_cast<const uint32_t *>(value));
+				return snprintf(buffer, size, "%d", *static_cast<const int32_t *>(value));
 
 			case Table::Column::TinyInt:
-				return snprintf(buffer, size, "%u", *static_cast<const uint8_t *>(value));
+				return snprintf(buffer, size, "%d", *static_cast<const int8_t *>(value));
 
 			case Table::Column::SmallInt:
-				return snprintf(buffer, size, "%hu", *static_cast<const uint16_t *>(value));
+				return snprintf(buffer, size, "%hd", *static_cast<const int16_t *>(value));
 
 			case Table::Column::BigInt:
-				return snprintf(buffer, size, "%" PRIu64, *static_cast<const uint64_t *>(value));
+				return snprintf(buffer, size, "%" PRId64, *static_cast<const int64_t *>(value));
 
 			case Table::Column::Text:
 				return snprintf(buffer, size, "'%s'", static_cast<const char *>(value));

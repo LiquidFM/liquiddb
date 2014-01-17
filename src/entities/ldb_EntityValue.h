@@ -37,7 +37,8 @@ namespace LiquidDb {
 class EntityValue
 {
 public:
-    typedef Entity::Id Id;
+    typedef Entity::Id               Id;
+    typedef ::EFC::List<EntityValue> List;
 
 public:
     EntityValue();

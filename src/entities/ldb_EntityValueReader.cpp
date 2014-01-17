@@ -50,11 +50,6 @@ void EntityValueReader::addValue(const EntityValue &value, const EntityValue &pr
 
 }
 
-void EntityValueReader::addValue(const EntityValue &value, const CompositeEntityValue::Values &values)
-{
-
-}
-
 void EntityValueReader::takeValue(const EntityValue &value, const EntityValue &property)
 {
 

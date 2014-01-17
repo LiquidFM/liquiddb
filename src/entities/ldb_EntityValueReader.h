@@ -48,7 +48,6 @@ public:
     void refresh();
 
     static void addValue(const EntityValue &value, const EntityValue &property);
-    static void addValue(const EntityValue &value, const CompositeEntityValue::Values &values);
     static void takeValue(const EntityValue &value, const EntityValue &property);
     static void updateValue(const EntityValue &value, const ::EFC::Variant &newValue);
     static void removeValue(const EntityValue &value, const EntityValue &property);

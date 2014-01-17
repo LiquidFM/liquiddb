@@ -35,6 +35,8 @@
 #include "entities/ldb_Entity_p.h"
 #include "entities/ldb_EntityValueReader.h"
 
+#include <brolly/assert.h>
+
 
 namespace {
     using namespace LiquidDb;
@@ -93,6 +95,7 @@ EntityValueReader Storage::perform(const SelectEntity &query)
 Entity Storage::createEntity(Entity::Type type, const char *name, const char *title)
 {
     Entity::Id id;
+
     EntitiesTable entitiesTable;
     Insert query(entitiesTable);
 
@@ -114,6 +117,7 @@ Entity Storage::createEntity(Entity::Type type, const char *name, const char *ti
 bool Storage::removeEntity(const Entity &entity)
 {
     Entity::Id id = entity.id();
+
     EntitiesTable entitiesTable;
     PropertiesTable propertiesTable;
 
@@ -165,10 +169,11 @@ bool Storage::removeEntity(const Entity &entity)
 
 bool Storage::addProperty(const Entity &entity, const Entity &property, const char *name)
 {
-    if (entity != property &&
-        entity.type() == Entity::Composite &&
-        entity.properties().find(property.id()) == entity.properties().end() &&
-        !isThereCycles(entity, property))
+    ASSERT(entity != property);
+    ASSERT(entity.type() == Entity::Composite);
+    ASSERT(entity.properties().find(property.id()) == entity.properties().end());
+
+    if (!isThereCycles(entity, property))
     {
         Entity::Id id;
         Entity::Id entityId = entity.id();
@@ -195,34 +200,33 @@ bool Storage::addProperty(const Entity &entity, const Entity &property, const ch
 
 bool Storage::renameProperty(const Entity &entity, const Entity &property, const char *name)
 {
-    if (entity.properties().find(property.id()) != entity.properties().end())
+    ASSERT(entity.properties().find(property.id()) != entity.properties().end());
+
+    Entity::Id entityId = entity.id();
+    Entity::Id propertyId = property.id();
+
+    PropertiesTable propertiesTable;
+    Update query(propertiesTable);
+
+    query.update(propertiesTable.column(PropertiesTable::Name), name);
+
+    Field entityIdField(propertiesTable, propertiesTable.column(PropertiesTable::EntityId));
+    ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
+
+    Field propertyIdField(propertiesTable, propertiesTable.column(PropertiesTable::PropertyId));
+    ConstConstraint constraint2(propertyIdField, Constraint::Equal, &propertyId);
+
+    GroupConstraint constraint(GroupConstraint::And);
+    constraint.add(constraint1);
+    constraint.add(constraint2);
+
+    query.where(constraint);
+
+    if (m_database.perform(query))
     {
-        Entity::Id entityId = entity.id();
-        Entity::Id propertyId = property.id();
+        entity.m_implementation->rename(property, name);
 
-        PropertiesTable propertiesTable;
-        Update query(propertiesTable);
-
-        query.update(propertiesTable.column(PropertiesTable::Name), name);
-
-        Field entityIdField(propertiesTable, propertiesTable.column(PropertiesTable::EntityId));
-        ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
-
-        Field propertyIdField(propertiesTable, propertiesTable.column(PropertiesTable::PropertyId));
-        ConstConstraint constraint2(propertyIdField, Constraint::Equal, &propertyId);
-
-        GroupConstraint constraint(GroupConstraint::And);
-        constraint.add(constraint1);
-        constraint.add(constraint2);
-
-        query.where(constraint);
-
-        if (m_database.perform(query))
-        {
-            entity.m_implementation->rename(property, name);
-
-            return true;
-        }
+        return true;
     }
 
     return false;
@@ -230,32 +234,76 @@ bool Storage::renameProperty(const Entity &entity, const Entity &property, const
 
 bool Storage::removeProperty(const Entity &entity, const Entity &property)
 {
-    if (entity != property &&
-        entity.type() == Entity::Composite &&
-        entity.properties().find(property.id()) != entity.properties().end())
+    ASSERT(entity != property);
+    ASSERT(entity.type() == Entity::Composite);
+    ASSERT(entity.properties().find(property.id()) != entity.properties().end());
+
+    Entity::Id entityId = entity.id();
+    Entity::Id propertyId = property.id();
+
+    PropertiesTable propertiesTable;
+    Delete query(propertiesTable);
+
+    Field entityIdField(propertiesTable, propertiesTable.column(PropertiesTable::EntityId));
+    ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
+
+    Field propertyIdField(propertiesTable, propertiesTable.column(PropertiesTable::PropertyId));
+    ConstConstraint constraint2(propertyIdField, Constraint::Equal, &propertyId);
+
+    GroupConstraint constraint(GroupConstraint::And);
+    constraint.add(constraint1);
+    constraint.add(constraint2);
+
+    query.where(constraint);
+
+    if (m_database.perform(query))
     {
-        Entity::Id entityId = entity.id();
-        Entity::Id propertyId = property.id();
+        entity.m_implementation->remove(property);
+        property.m_implementation->removeParent(entity);
 
-        PropertiesTable propertiesTable;
-        Delete query(propertiesTable);
+        return true;
+    }
 
-        Field entityIdField(propertiesTable, propertiesTable.column(PropertiesTable::EntityId));
-        ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
+    return false;
+}
 
-        Field propertyIdField(propertiesTable, propertiesTable.column(PropertiesTable::PropertyId));
-        ConstConstraint constraint2(propertyIdField, Constraint::Equal, &propertyId);
+EntityValue Storage::addValue(const Entity &entity)
+{
+    ASSERT(entity.type() == Entity::Composite);
 
-        GroupConstraint constraint(GroupConstraint::And);
-        constraint.add(constraint1);
-        constraint.add(constraint2);
+    Entity::Id id;
 
-        query.where(constraint);
+    EntityTable entityTable(entity);
+    Insert query(entityTable);
 
-        if (m_database.perform(query))
+    if (m_database.perform(query, id))
+        return EntityValueReader::createValue(entity, id);
+
+    return EntityValue();
+}
+
+bool Storage::addValue(const EntityValue &entityValue, const EntityValue &propertyValue)
+{
+    ASSERT(entityValue.entity().type() == Entity::Composite);
+
+    CompositeEntityValue compositeEntityValue(entityValue);
+    const CompositeEntityValue::Values &values = compositeEntityValue.values(propertyValue.entity());
+
+    if (values.find(propertyValue.id()) == values.end())
+    {
+        Entity::Id id;
+        Entity::Id entityId = entityValue.id();
+        Entity::Id propertyId = propertyValue.id();
+
+        PropertyTable propertyTable(entityValue.entity(), propertyValue.entity());
+        Insert query(propertyTable);
+
+        query.insert(propertyTable.column(PropertyTable::EntityValueId), &entityId);
+        query.insert(propertyTable.column(PropertyTable::PropertyValueId), &propertyId);
+
+        if (m_database.perform(query, id))
         {
-            entity.m_implementation->remove(property);
-            property.m_implementation->removeParent(entity);
+            EntityValueReader::addValue(entityValue, propertyValue);
 
             return true;
         }
@@ -264,28 +312,166 @@ bool Storage::removeProperty(const Entity &entity, const Entity &property)
     return false;
 }
 
-EntityValue Storage::addValue(const Entity &entity)
+bool Storage::addValue(const EntityValue &entityValue, const EntityValue::List &propertyValues)
 {
-    return EntityValue();
-}
+    ASSERT(!propertyValues.empty());
+    ASSERT(entityValue.entity().type() == Entity::Composite);
 
-bool Storage::addValue(const EntityValue &entityValue, const EntityValue &propertyValue)
-{
-    return false;
-}
+    Entity::Id id;
+    Entity::Id entityId = entityValue.id();
+    Entity::Id propertyId;
 
-bool Storage::addValue(const EntityValue &entityValue, const CompositeEntityValue::Values &propertyValues)
-{
-    return false;
+    CompositeEntityValue compositeEntityValue(entityValue);
+
+    for (EntityValue::List::const_iterator i = propertyValues.begin(), end = propertyValues.end(); i != end; ++i)
+    {
+        if (entityValue.entity().properties().find(i->entity().id()) == entityValue.entity().properties().end())
+            return false;
+
+        const CompositeEntityValue::Values &values = compositeEntityValue.values(i->entity());
+
+        if (values.find(i->id()) != values.end())
+            return false;
+    }
+
+    for (EntityValue::List::const_iterator i = propertyValues.begin(), end = propertyValues.end(); i != end; ++i)
+    {
+        PropertyTable propertyTable(entityValue.entity(), i->entity());
+        Insert query(propertyTable);
+
+        propertyId = i->id();
+
+        query.insert(propertyTable.column(PropertyTable::EntityValueId), &entityId);
+        query.insert(propertyTable.column(PropertyTable::PropertyValueId), &propertyId);
+
+        if (m_database.perform(query, id))
+            EntityValueReader::addValue(entityValue, *i);
+        else
+        {
+            for (--i; i != end; --i)
+                EntityValueReader::removeValue(entityValue, *i);
+
+            return false;
+        }
+    }
+
+    return true;
 }
 
 EntityValue Storage::addValue(const Entity &entity, const ::EFC::Variant &value)
 {
+    ASSERT(entity.type() != Entity::Composite);
+
+    Entity::Id id;
+
+    EntityTable entityTable(entity);
+    Insert query(entityTable);
+
+    switch (entity.type())
+    {
+        case Entity::Int:
+        {
+            int32_t val = value.asInt32();
+
+            query.insert(entityTable.column(EntityTable::Value), &val);
+
+            if (m_database.perform(query, id))
+                return EntityValueReader::createValue(entity, id, value);
+
+            break;
+        }
+
+        case Entity::String:
+        case Entity::Memo:
+        {
+            query.insert(entityTable.column(EntityTable::Value), value.asString());
+
+            if (m_database.perform(query, id))
+                return EntityValueReader::createValue(entity, id, value);
+
+            break;
+        }
+
+        case Entity::Date:
+        case Entity::Time:
+        case Entity::DateTime:
+        {
+            uint64_t val = value.asUint64();
+
+            query.insert(entityTable.column(EntityTable::Value), &val);
+
+            if (m_database.perform(query, id))
+                return EntityValueReader::createValue(entity, id, value);
+
+            break;
+        }
+
+        default:
+            break;
+    }
+
     return EntityValue();
 }
 
 bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newValue)
 {
+    ASSERT(value.entity().type() != Entity::Composite);
+
+    EntityTable entityTable(value.entity());
+    Update query(entityTable);
+
+    switch (value.entity().type())
+    {
+        case Entity::Int:
+        {
+            int32_t val = newValue.asInt32();
+
+            query.update(entityTable.column(EntityTable::Value), &val);
+
+            if (m_database.perform(query))
+            {
+                EntityValueReader::updateValue(value, newValue);
+                return true;
+            }
+
+            break;
+        }
+
+        case Entity::String:
+        case Entity::Memo:
+        {
+            query.update(entityTable.column(EntityTable::Value), newValue.asString());
+
+            if (m_database.perform(query))
+            {
+                EntityValueReader::updateValue(value, newValue);
+                return true;
+            }
+
+            break;
+        }
+
+        case Entity::Date:
+        case Entity::Time:
+        case Entity::DateTime:
+        {
+            uint64_t val = newValue.asUint64();
+
+            query.update(entityTable.column(EntityTable::Value), &val);
+
+            if (m_database.perform(query))
+            {
+                EntityValueReader::updateValue(value, newValue);
+                return true;
+            }
+
+            break;
+        }
+
+        default:
+            break;
+    }
+
     return false;
 }
 
@@ -306,6 +492,29 @@ bool Storage::removeValue(const Entity &entity, const Entity::IdsList &ids)
 
 bool Storage::removeValue(const EntityValue &entityValue, const EntityValue &propertyValue)
 {
+    PropertyTable propertyTable(entityValue.entity(), propertyValue.entity());
+    Delete query(propertyTable);
+
+    Entity::Id entityId = entityValue.id();
+    Field entityValueId(propertyTable, propertyTable.column(PropertyTable::EntityValueId));
+    ConstConstraint constraint1(entityValueId, Constraint::Equal, &entityId);
+
+    Entity::Id propertyId = propertyValue.id();
+    Field propertyValueId(propertyTable, propertyTable.column(PropertyTable::PropertyValueId));
+    ConstConstraint constraint2(propertyValueId, Constraint::Equal, &propertyId);
+
+    GroupConstraint constraint(GroupConstraint::And);
+    constraint.add(constraint1);
+    constraint.add(constraint2);
+
+    query.where(constraint);
+
+    if (m_database.perform(query))
+    {
+        EntityValueReader::takeValue(entityValue, propertyValue);
+        return true;
+    }
+
     return false;
 }
 

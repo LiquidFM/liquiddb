@@ -53,7 +53,7 @@ public:
 
     EntityValue addValue(const Entity &entity);
     bool addValue(const EntityValue &entityValue, const EntityValue &propertyValue);
-    bool addValue(const EntityValue &entityValue, const CompositeEntityValue::Values &propertyValues);
+    bool addValue(const EntityValue &entityValue, const EntityValue::List &propertyValues);
     EntityValue addValue(const Entity &entity, const ::EFC::Variant &value);
     bool updateValue(const EntityValue &value, const ::EFC::Variant &newValue);
     bool removeValue(const Entity &entity, const Entity::IdsList &ids);

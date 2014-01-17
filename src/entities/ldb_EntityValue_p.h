@@ -158,14 +158,20 @@ public:
             return (*index).second;
     }
 
-    const Values &values(const Entity &property)
+    const Values &values(const Entity &property) const
     {
-        return m_items[property];
+        Map::const_iterator i = m_items.find(property);
+
+        if (i == m_items.end())
+            return m_empty;
+        else
+            return (*i).second;
     }
 
 private:
     typedef ::EFC::Map<Entity, Values> Map;
     Map m_items;
+    Values m_empty;
 };
 
 }
