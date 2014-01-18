@@ -42,7 +42,7 @@ int Join::build(char *buffer, size_t size) const
 {
 	return snprintf(buffer, size, " %s %s ON %s.%s %s %s.%s",
 								  kindToString(m_kind),
-								  m_fields[1].table->name(),
+								  m_fields[0].table->name(),
 								  m_fields[0].table->name(),
 								  m_fields[0].column->name,
 								  operatorToString(m_op),

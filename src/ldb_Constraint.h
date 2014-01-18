@@ -109,24 +109,6 @@ private:
 	Container m_constraints;
 };
 
-
-class EntityConstraint : public Constraint
-{
-public:
-    EntityConstraint(const Entity::Property &property, Operator op, const EntityValue &value);
-
-    const Entity::Property &property() const { return m_property; }
-    Operator op() const { return m_op; }
-    const EntityValue &value() const { return m_value; }
-
-    virtual int build(char *buffer, size_t size) const;
-
-private:
-    Entity::Property m_property;
-    Operator m_op;
-    EntityValue m_value;
-};
-
 }
 
 #endif /* LDB_CONSTRAINT_H_ */

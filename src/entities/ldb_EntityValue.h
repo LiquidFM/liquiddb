@@ -37,8 +37,10 @@ namespace LiquidDb {
 class EntityValue
 {
 public:
-    typedef Entity::Id               Id;
-    typedef ::EFC::List<EntityValue> List;
+    typedef Entity::Id                  Id;
+    typedef ::EFC::List<EntityValue>    List;
+    typedef ::EFC::Map<Id, EntityValue> Values;
+    enum { InvalidId = Entity::InvalidId };
 
 public:
     EntityValue();
@@ -53,12 +55,21 @@ public:
     Id id() const;
     ::EFC::Variant value() const;
 
+    static void addValue(const EntityValue &value, const EntityValue &property);
+    static void takeValue(const EntityValue &value, const EntityValue &property);
+    static ::EFC::Variant updateValue(const EntityValue &value, const ::EFC::Variant &newValue);
+    static void removeValue(const EntityValue &value, const EntityValue &property);
+    static void removeValue(const EntityValue &value, const Values &values);
+    static EntityValue createValue(const Entity &entity, EntityValue::Id id);
+    static EntityValue createValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value);
+
 protected:
     class Implementation;
     typedef ::EFC::SharedPointer<Implementation> Holder;
 
 protected:
     EntityValue(Holder &holder);
+    EntityValue(Implementation *implementation);
 
 protected:
     Holder m_implementation;
@@ -68,9 +79,6 @@ protected:
 class CompositeEntityValue : public EntityValue
 {
 public:
-    typedef ::EFC::Map<Id, EntityValue> Values;
-
-public:
     CompositeEntityValue();
     CompositeEntityValue(const EntityValue &value);
 
@@ -78,6 +86,7 @@ public:
     void resetValue();
 
 private:
+    friend class EntityValue;
     class Implementation;
 };
 

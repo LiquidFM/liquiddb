@@ -23,51 +23,7 @@
 
 #include "structure/ldb_EntitiesTable.h"
 #include "structure/ldb_PropertiesTable.h"
-#include "structure/ldb_EntityTable.h"
-#include "structure/ldb_PropertyTable.h"
 #include "entities/ldb_Entity.h"
-
-#include <efc/List>
-#include <efc/ScopedPointer>
-
-
-namespace {
-    using namespace EFC;
-    using namespace LiquidDb;
-
-    class JoinProperty
-    {
-    public:
-        JoinProperty(const EntityTable &entityTable, const Entity &entity, const Entity &property) :
-            m_propertyTable(entity, property),
-            m_fieldId1(entityTable, EntityTable::Id),
-            m_entityValueId(m_propertyTable, PropertyTable::EntityValueId),
-            m_join1(m_fieldId1, Join::Equal, m_entityValueId),
-
-            m_entityPropertyTable(property),
-            m_propertyValueId(m_propertyTable, PropertyTable::PropertyValueId),
-            m_fieldId2(m_entityPropertyTable, EntityTable::Id),
-            m_join2(m_propertyValueId, Join::Equal, m_fieldId2)
-        {}
-
-        const Join &join1() const { return m_join1; }
-        const Join &join2() const { return m_join2; }
-        const EntityTable &propertyTable() const { return m_entityPropertyTable; }
-
-    private:
-        PropertyTable m_propertyTable;
-        Field m_fieldId1;
-        Field m_entityValueId;
-        Join m_join1;
-
-        EntityTable m_entityPropertyTable;
-        Field m_propertyValueId;
-        Field m_fieldId2;
-        Join m_join2;
-    };
-
-    typedef List<ScopedPointer<JoinProperty>> PropertiesList;
-}
 
 
 namespace LiquidDb {
@@ -401,54 +357,6 @@ int Delete::build(char *buffer, size_t size) const
         return -1;
 
     return len;
-}
-
-
-SelectEntity::SelectEntity(const Entity &entity) :
-    m_entity(entity)
-{}
-
-SelectEntity::~SelectEntity()
-{}
-
-void SelectEntity::where(const EntityConstraint &constraint)
-{
-    Query::where(constraint);
-}
-
-int SelectEntity::build(char *buffer, size_t size) const
-{
-    EntityTable entityTable(m_entity);
-    Select query(entityTable);
-
-    query.select(entityTable);
-    query.where(m_constraints);
-
-    if (m_entity.type() != Entity::Composite)
-        return query.build(buffer, size);
-    else
-    {
-        PropertiesList list;
-
-        for (Entity::Properties::const_iterator i = m_entity.properties().begin(), end = m_entity.properties().end(); i != end; ++i)
-        {
-            ::EFC::ScopedPointer<JoinProperty> property(new (std::nothrow) JoinProperty(entityTable, m_entity, (*i).second.entity));
-
-            if (LIKELY(property != NULL))
-            {
-                query.join(property->join1());
-                query.join(property->join2());
-                query.select(property->propertyTable());
-
-                if (UNLIKELY(list.push_back(std::move(property))) == false)
-                    return -1;
-            }
-        }
-
-        return query.build(buffer, size);
-    }
-
-    return -1;
 }
 
 }

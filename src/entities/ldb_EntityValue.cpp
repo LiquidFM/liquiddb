@@ -48,8 +48,47 @@ EntityValue::Id EntityValue::id() const
     return m_implementation->value();
 }
 
+void EntityValue::addValue(const EntityValue &value, const EntityValue &property)
+{
+
+}
+
+void EntityValue::takeValue(const EntityValue &value, const EntityValue &property)
+{
+
+}
+
+::EFC::Variant EntityValue::updateValue(const EntityValue &value, const ::EFC::Variant &newValue)
+{
+    return ::EFC::Variant();
+}
+
+void EntityValue::removeValue(const EntityValue &value, const EntityValue &property)
+{
+
+}
+
+void EntityValue::removeValue(const EntityValue &value, const Values &values)
+{
+
+}
+
+EntityValue EntityValue::createValue(const Entity &entity, EntityValue::Id id)
+{
+    return EntityValue(new (std::nothrow) CompositeEntityValue::Implementation(entity, id));
+}
+
+EntityValue EntityValue::createValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value)
+{
+    return EntityValue(new (std::nothrow) Implementation(entity, id, value));
+}
+
 EntityValue::EntityValue(Holder &holder) :
     m_implementation(std::move(holder))
+{}
+
+EntityValue::EntityValue(Implementation *implementation) :
+    m_implementation(implementation)
 {}
 
 CompositeEntityValue::CompositeEntityValue()

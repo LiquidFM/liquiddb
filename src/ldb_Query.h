@@ -29,7 +29,6 @@ class Join;
 class Constraint;
 class Database;
 class Entity;
-class EntityConstraint;
 
 
 class Query
@@ -130,29 +129,6 @@ public:
 
 private:
     const Table *m_from;
-};
-
-
-class SelectEntity : public Query
-{
-public:
-    SelectEntity(const Entity &entity);
-    virtual ~SelectEntity();
-
-    void where(const EntityConstraint &constraint);
-
-    virtual int build(char *buffer, size_t size) const;
-
-private:
-    using Query::join;
-    using Query::where;
-
-private:
-    friend class Database;
-    Fields m_fields;
-
-private:
-    const Entity &m_entity;
 };
 
 }

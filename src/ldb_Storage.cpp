@@ -25,6 +25,7 @@
 #include "ldb_Query.h"
 #include "ldb_DataSet.h"
 #include "ldb_Constraint.h"
+#include "ldb_Join.h"
 
 #include "structure/ldb_EntitiesTable.h"
 #include "structure/ldb_PropertiesTable.h"
@@ -35,6 +36,8 @@
 #include "entities/ldb_Entity_p.h"
 #include "entities/ldb_EntityValueReader.h"
 
+#include <efc/List>
+#include <efc/ScopedPointer>
 #include <brolly/assert.h>
 
 
@@ -57,6 +60,39 @@ namespace {
 
         return res;
     }
+
+    class JoinProperty
+    {
+    public:
+        JoinProperty(const Table &entityTable, const Entity &entity, const Entity &property) :
+            m_propertyTable(entity, property),
+            m_entityValueId(m_propertyTable, PropertyTable::EntityValueId),
+            m_fieldId1(entityTable, EntityTable::Id),
+            m_join1(m_entityValueId, Join::Equal, m_fieldId1),
+
+            m_entityPropertyTable(property),
+            m_fieldId2(m_entityPropertyTable, EntityTable::Id),
+            m_propertyValueId(m_propertyTable, PropertyTable::PropertyValueId),
+            m_join2(m_fieldId2, Join::Equal, m_propertyValueId)
+        {}
+
+        const Join &join1() const { return m_join1; }
+        const Join &join2() const { return m_join2; }
+        const EntityTable &propertyTable() const { return m_entityPropertyTable; }
+
+    private:
+        PropertyTable m_propertyTable;
+        Field m_entityValueId;
+        Field m_fieldId1;
+        Join m_join1;
+
+        EntityTable m_entityPropertyTable;
+        Field m_fieldId2;
+        Field m_propertyValueId;
+        Join m_join2;
+    };
+
+    typedef ::EFC::List< ::EFC::ScopedPointer<JoinProperty> > PropertiesList;
 }
 
 
@@ -88,9 +124,25 @@ Storage::Storage(const char *fileName, bool create)
         }
 }
 
-EntityValueReader Storage::perform(const SelectEntity &query)
+EntityValueReader Storage::perform(const Entity &entity)
 {
-    return EntityValueReader();
+    EntityTable entityTable(entity);
+    Select query(entityTable);
+
+    query.select(entityTable);
+
+    return perform(entity, entityTable, query);
+}
+
+EntityValueReader Storage::perform(const Entity &entity, const Constraint &constraint)
+{
+    EntityTable entityTable(entity);
+    Select query(entityTable);
+
+    query.select(entityTable);
+    query.where(constraint);
+
+    return perform(entity, entityTable, query);
 }
 
 Entity Storage::createEntity(Entity::Type type, const char *name, const char *title)
@@ -194,11 +246,16 @@ bool Storage::addProperty(const Entity &entity, const Entity &property, const ch
 
         if (m_database.perform(query, id))
         {
-            entity.m_implementation->add(property, name);
-            property.m_implementation->addParent(entity);
-            m_undoStack.undoAddProperty(entity, property);
+            PropertyTable propertyTable(entity, property);
 
-            return true;
+            if (m_database.create(propertyTable))
+            {
+                entity.m_implementation->add(property, name);
+                property.m_implementation->addParent(entity);
+                m_undoStack.undoAddProperty(entity, property);
+
+                return true;
+            }
         }
     }
 
@@ -286,7 +343,7 @@ EntityValue Storage::addValue(const Entity &entity)
     Insert query(entityTable);
 
     if (m_database.perform(query, id))
-        return EntityValueReader::createValue(entity, id);
+        return EntityValue::createValue(entity, id);
 
     return EntityValue();
 }
@@ -312,7 +369,7 @@ bool Storage::addValue(const EntityValue &entityValue, const EntityValue &proper
 
         if (m_database.perform(query, id))
         {
-            EntityValueReader::addValue(entityValue, propertyValue);
+            EntityValue::addValue(entityValue, propertyValue);
             m_undoStack.undoAddValue(entityValue, propertyValue);
 
             return true;
@@ -355,11 +412,11 @@ bool Storage::addValue(const EntityValue &entityValue, const EntityValue::List &
         query.insert(propertyTable.column(PropertyTable::PropertyValueId), &propertyId);
 
         if (m_database.perform(query, id))
-            EntityValueReader::addValue(entityValue, *i);
+            EntityValue::addValue(entityValue, *i);
         else
         {
             for (--i; i != end; --i)
-                EntityValueReader::removeValue(entityValue, *i);
+                EntityValue::removeValue(entityValue, *i);
 
             return false;
         }
@@ -387,7 +444,7 @@ EntityValue Storage::addValue(const Entity &entity, const ::EFC::Variant &value)
             query.insert(entityTable.column(EntityTable::Value), &val);
 
             if (m_database.perform(query, id))
-                return EntityValueReader::createValue(entity, id, value);
+                return EntityValue::createValue(entity, id, value);
 
             break;
         }
@@ -398,7 +455,7 @@ EntityValue Storage::addValue(const Entity &entity, const ::EFC::Variant &value)
             query.insert(entityTable.column(EntityTable::Value), value.asString());
 
             if (m_database.perform(query, id))
-                return EntityValueReader::createValue(entity, id, value);
+                return EntityValue::createValue(entity, id, value);
 
             break;
         }
@@ -412,7 +469,7 @@ EntityValue Storage::addValue(const Entity &entity, const ::EFC::Variant &value)
             query.insert(entityTable.column(EntityTable::Value), &val);
 
             if (m_database.perform(query, id))
-                return EntityValueReader::createValue(entity, id, value);
+                return EntityValue::createValue(entity, id, value);
 
             break;
         }
@@ -441,7 +498,7 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
 
             if (m_database.perform(query))
             {
-                ::EFC::Variant oldValue = std::move(EntityValueReader::updateValue(value, newValue));
+                ::EFC::Variant oldValue = std::move(EntityValue::updateValue(value, newValue));
                 m_undoStack.undoUpdateValue(value, oldValue);
                 return true;
             }
@@ -456,7 +513,7 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
 
             if (m_database.perform(query))
             {
-                ::EFC::Variant oldValue = std::move(EntityValueReader::updateValue(value, newValue));
+                ::EFC::Variant oldValue = std::move(EntityValue::updateValue(value, newValue));
                 m_undoStack.undoUpdateValue(value, oldValue);
                 return true;
             }
@@ -474,7 +531,7 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
 
             if (m_database.perform(query))
             {
-                ::EFC::Variant oldValue = std::move(EntityValueReader::updateValue(value, newValue));
+                ::EFC::Variant oldValue = std::move(EntityValue::updateValue(value, newValue));
                 m_undoStack.undoUpdateValue(value, oldValue);
                 return true;
             }
@@ -525,12 +582,37 @@ bool Storage::removeValue(const EntityValue &entityValue, const EntityValue &pro
 
     if (m_database.perform(query))
     {
-        EntityValueReader::takeValue(entityValue, propertyValue);
+        EntityValue::takeValue(entityValue, propertyValue);
         m_undoStack.undoRemoveValue(entityValue, propertyValue);
         return true;
     }
 
     return false;
+}
+
+EntityValueReader Storage::perform(const Entity &entity, const Table &table, Select &query)
+{
+    DataSet data;
+    PropertiesList list;
+
+    for (Entity::Properties::const_iterator i = entity.properties().begin(), end = entity.properties().end(); i != end; ++i)
+    {
+        ::EFC::ScopedPointer<JoinProperty> property(new (std::nothrow) JoinProperty(table, entity, (*i).second.entity));
+
+        if (LIKELY(property != NULL))
+        {
+            query.join(property->join1());
+            query.join(property->join2());
+            query.select(property->propertyTable());
+
+            if (UNLIKELY(list.push_back(std::move(property))) == false)
+                return EntityValueReader();
+        }
+    }
+
+    m_database.perform(query, data);
+
+    return EntityValueReader();
 }
 
 bool Storage::loadEntities()

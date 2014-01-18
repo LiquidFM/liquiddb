@@ -32,7 +32,8 @@
 
 namespace LiquidDb {
 
-class SelectEntity;
+class Select;
+class Constraint;
 class EntityValueReader;
 
 
@@ -43,7 +44,8 @@ public:
 
     bool isValid() const { return m_database.lastError() == 0; }
 
-    EntityValueReader perform(const SelectEntity &query);
+    EntityValueReader perform(const Entity &entity);
+    EntityValueReader perform(const Entity &entity, const Constraint &constraint);
 
     Entity createEntity(Entity::Type type, const char *name, const char *title);
     bool removeEntity(const Entity &entity);
@@ -59,6 +61,9 @@ public:
     bool updateValue(const EntityValue &value, const ::EFC::Variant &newValue);
     bool removeValue(const Entity &entity, const Entity::IdsList &ids);
     bool removeValue(const EntityValue &entityValue, const EntityValue &propertyValue);
+
+private:
+    EntityValueReader perform(const Entity &entity, const Table &table, Select &query);
 
 private:
     bool loadEntities();

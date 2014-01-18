@@ -32,7 +32,7 @@ EntityValueReader::EntityValueReader() :
     m_beforeFirst(false)
 {}
 
-EntityValueReader::EntityValueReader(const SelectEntity &query)
+EntityValueReader::EntityValueReader(const Entity &query)
 {}
 
 EntityValue EntityValueReader::next() const
@@ -43,41 +43,6 @@ EntityValue EntityValueReader::next() const
 void EntityValueReader::refresh()
 {
 
-}
-
-void EntityValueReader::addValue(const EntityValue &value, const EntityValue &property)
-{
-
-}
-
-void EntityValueReader::takeValue(const EntityValue &value, const EntityValue &property)
-{
-
-}
-
-::EFC::Variant EntityValueReader::updateValue(const EntityValue &value, const ::EFC::Variant &newValue)
-{
-    return ::EFC::Variant();
-}
-
-void EntityValueReader::removeValue(const EntityValue &value, const EntityValue &property)
-{
-
-}
-
-void EntityValueReader::removeValue(const EntityValue &value, const CompositeEntityValue::Values &values)
-{
-
-}
-
-EntityValue EntityValueReader::createValue(const Entity &entity, EntityValue::Id id)
-{
-    return EntityValue();
-}
-
-EntityValue EntityValueReader::createValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value)
-{
-    return EntityValue();
 }
 
 EntityValue EntityValueReader::doNext() const

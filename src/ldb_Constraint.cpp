@@ -190,15 +190,4 @@ const char *GroupConstraint::operatorToString(Type op)
 	}
 }
 
-EntityConstraint::EntityConstraint(const Entity::Property &property, Operator op, const EntityValue &value) :
-    m_property(property),
-    m_op(op),
-    m_value(value)
-{}
-
-int EntityConstraint::build(char *buffer, size_t size) const
-{
-    return -1;
-}
-
 }

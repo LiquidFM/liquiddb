@@ -56,6 +56,7 @@ public:
     typedef ::EFC::List<Id>          IdsList;
     typedef ::EFC::Map<Id, Entity>   Parents;
     typedef ::EFC::Map<Id, Property> Properties;
+    enum { InvalidId = Database::InvalidId };
 
 public:
     Entity();

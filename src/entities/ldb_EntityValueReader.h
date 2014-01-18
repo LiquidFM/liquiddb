@@ -36,7 +36,7 @@ class EntityValueReader
 {
 public:
     EntityValueReader();
-    EntityValueReader(const SelectEntity &query);
+    EntityValueReader(const Entity &query);
 
 //    bool isValid() const { return m_context.isValid(); }
 //    const Entity &entity() const { return m_context.entity(); }
@@ -46,14 +46,6 @@ public:
     bool bof() const { return m_beforeFirst; }
     void close() { m_afterLast = true; }
     void refresh();
-
-    static void addValue(const EntityValue &value, const EntityValue &property);
-    static void takeValue(const EntityValue &value, const EntityValue &property);
-    static ::EFC::Variant updateValue(const EntityValue &value, const ::EFC::Variant &newValue);
-    static void removeValue(const EntityValue &value, const EntityValue &property);
-    static void removeValue(const EntityValue &value, const CompositeEntityValue::Values &values);
-    static EntityValue createValue(const Entity &entity, EntityValue::Id id);
-    static EntityValue createValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value);
 
 private:
     EntityValue doNext() const;
