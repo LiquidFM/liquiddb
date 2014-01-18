@@ -19,7 +19,7 @@
 #ifndef LDB_QUERY_H_
 #define LDB_QUERY_H_
 
-#include <efc/List>
+#include <efc/StaticList>
 #include <liquiddb/Field>
 
 
@@ -29,14 +29,20 @@ class Join;
 class Constraint;
 class Database;
 class Entity;
+class EntityConstraint;
 
 
 class Query
 {
 public:
-	typedef ::EFC::List<Field>              Fields;
-	typedef ::EFC::List<const Join *>       Joins;
-	typedef ::EFC::List<const Constraint *> Constraints;
+    enum
+    {
+        MaxFields = 16
+    };
+
+    typedef ::EFC::StaticList<Field, MaxFields> Fields;
+    typedef ::EFC::StaticList<const Join *, MaxFields> Joins;
+    typedef ::EFC::StaticList<const Constraint *, MaxFields> Constraints;
 
 	struct Value
 	{
@@ -44,7 +50,8 @@ public:
 		const void *value;
 		size_t size;
 	};
-	typedef ::EFC::List<Value> Values;
+
+    typedef ::EFC::StaticList<Value, MaxFields> Values;
 
 public:
 	Query();
@@ -52,6 +59,7 @@ public:
 
 	void join(const Join &link);
 	void where(const Constraint &constraint);
+    void where(const Constraints &constraints);
 
 	virtual int build(char *buffer, size_t size) const;
 
@@ -68,7 +76,7 @@ public:
 	virtual ~Select();
 
 	void select(const Table &table);
-	void select(const Table &table, const Table::Column *column);
+	void select(const Table &table, unsigned char column);
 	virtual int build(char *buffer, size_t size) const;
 
 private:
@@ -131,10 +139,13 @@ public:
     SelectEntity(const Entity &entity);
     virtual ~SelectEntity();
 
+    void where(const EntityConstraint &constraint);
+
     virtual int build(char *buffer, size_t size) const;
 
 private:
     using Query::join;
+    using Query::where;
 
 private:
     friend class Database;

@@ -34,9 +34,9 @@ public:
 		column(NULL)
 	{}
 
-	Field(const Table &table, const Table::Column *column) :
+	Field(const Table &table, unsigned char column) :
 		table(&table),
-		column(column)
+		column(table.column(column))
 	{}
 
 public:

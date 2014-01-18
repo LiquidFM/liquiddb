@@ -19,7 +19,7 @@
 #ifndef LDB_CONSTRAINT_H_
 #define LDB_CONSTRAINT_H_
 
-#include <efc/List>
+#include <efc/StaticList>
 #include <liquiddb/Field>
 #include <liquiddb/Link>
 #include <liquiddb/Entity>
@@ -97,7 +97,12 @@ protected:
 	static const char *operatorToString(Type op);
 
 private:
-	typedef ::EFC::List<const Constraint *> Container;
+    enum
+    {
+        MaxConstraints = 16
+    };
+
+    typedef ::EFC::StaticList<const Constraint *, MaxConstraints> Container;
 
 private:
 	Type m_op;

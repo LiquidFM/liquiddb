@@ -52,7 +52,8 @@ namespace {
         Entity::IdsList res;
 
         for (Entity::IdsSet::const_iterator i = ids.begin(), end = ids.end(); i != end; ++i)
-            res.push_back(*i);
+            if (UNLIKELY(res.push_back(*i) == false))
+                return Entity::IdsList();
 
         return res;
     }
@@ -128,7 +129,7 @@ bool Storage::removeEntity(const Entity &entity)
     {
         Delete query(entitiesTable);
 
-        Field entityId(entitiesTable, entitiesTable.column(EntitiesTable::Id));
+        Field entityId(entitiesTable, EntitiesTable::Id);
         ConstConstraint constraint(entityId, Constraint::Equal, &id);
 
         query.where(constraint);
@@ -140,7 +141,7 @@ bool Storage::removeEntity(const Entity &entity)
     {
         Delete query(propertiesTable);
 
-        Field propertyId(propertiesTable, propertiesTable.column(PropertiesTable::PropertyId));
+        Field propertyId(propertiesTable, PropertiesTable::PropertyId);
         ConstConstraint constraint(propertyId, Constraint::Equal, &id);
 
         query.where(constraint);
@@ -216,10 +217,10 @@ bool Storage::renameProperty(const Entity &entity, const Entity &property, const
 
     query.update(propertiesTable.column(PropertiesTable::Name), name);
 
-    Field entityIdField(propertiesTable, propertiesTable.column(PropertiesTable::EntityId));
+    Field entityIdField(propertiesTable, PropertiesTable::EntityId);
     ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
 
-    Field propertyIdField(propertiesTable, propertiesTable.column(PropertiesTable::PropertyId));
+    Field propertyIdField(propertiesTable, PropertiesTable::PropertyId);
     ConstConstraint constraint2(propertyIdField, Constraint::Equal, &propertyId);
 
     GroupConstraint constraint(GroupConstraint::And);
@@ -251,10 +252,10 @@ bool Storage::removeProperty(const Entity &entity, const Entity &property)
     PropertiesTable propertiesTable;
     Delete query(propertiesTable);
 
-    Field entityIdField(propertiesTable, propertiesTable.column(PropertiesTable::EntityId));
+    Field entityIdField(propertiesTable, PropertiesTable::EntityId);
     ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
 
-    Field propertyIdField(propertiesTable, propertiesTable.column(PropertiesTable::PropertyId));
+    Field propertyIdField(propertiesTable, PropertiesTable::PropertyId);
     ConstConstraint constraint2(propertyIdField, Constraint::Equal, &propertyId);
 
     GroupConstraint constraint(GroupConstraint::And);
@@ -509,11 +510,11 @@ bool Storage::removeValue(const EntityValue &entityValue, const EntityValue &pro
     Delete query(propertyTable);
 
     Entity::Id entityId = entityValue.id();
-    Field entityValueId(propertyTable, propertyTable.column(PropertyTable::EntityValueId));
+    Field entityValueId(propertyTable, PropertyTable::EntityValueId);
     ConstConstraint constraint1(entityValueId, Constraint::Equal, &entityId);
 
     Entity::Id propertyId = propertyValue.id();
-    Field propertyValueId(propertyTable, propertyTable.column(PropertyTable::PropertyValueId));
+    Field propertyValueId(propertyTable, PropertyTable::PropertyValueId);
     ConstConstraint constraint2(propertyValueId, Constraint::Equal, &propertyId);
 
     GroupConstraint constraint(GroupConstraint::And);
@@ -575,7 +576,7 @@ bool Storage::loadProperties()
     PropertiesTable propertiesTable;
     BinaryValue nameValue;
 
-    Field entityId(propertiesTable, propertiesTable.column(PropertiesTable::EntityId));
+    Field entityId(propertiesTable, PropertiesTable::EntityId);
     ConstConstraint constraint(entityId, Constraint::Equal, &id);
     Select query(propertiesTable);
 
@@ -632,7 +633,7 @@ bool Storage::removeEntityValue(const Entity &entity, Entity::Id id)
     EntityTable entityTable(entity);
     Delete query(entityTable);
 
-    Field fieldId(entityTable, entityTable.column(EntityTable::Id));
+    Field fieldId(entityTable, EntityTable::Id);
     ConstConstraint constraint(fieldId, Constraint::Equal, &id);
 
     query.where(constraint);
@@ -645,7 +646,7 @@ bool Storage::removeEntityValues(const Entity &entity, const Entity::IdsList &id
     EntityTable entityTable(entity);
     Delete query(entityTable);
 
-    Field id(entityTable, entityTable.column(EntityTable::Id));
+    Field id(entityTable, EntityTable::Id);
     SetConstraint constraint(id, Constraint::In, ids);
 
     query.where(constraint);
@@ -662,9 +663,9 @@ bool Storage::removeOverlappingIds(const Entity &entity, const Entity &property,
                 PropertyTable propertyTable((*i).second.id(), property.id());
 
                 Select query(propertyTable);
-                query.select(propertyTable, propertyTable.column(PropertyTable::PropertyValueId));
+                query.select(propertyTable, PropertyTable::PropertyValueId);
 
-                Field propertyValueId(propertyTable, propertyTable.column(PropertyTable::PropertyValueId));
+                Field propertyValueId(propertyTable, PropertyTable::PropertyValueId);
                 SetConstraint constraint(propertyValueId, Constraint::In, setToList(ids));
 
                 query.where(constraint);
@@ -697,12 +698,12 @@ bool Storage::removeSelfOverlappingIds(const Entity &entity, const Entity::IdsLi
         PropertyTable propertyTable(entity.id(), property.id());
 
         Select query(propertyTable);
-        query.select(propertyTable, propertyTable.column(PropertyTable::PropertyValueId));
+        query.select(propertyTable, PropertyTable::PropertyValueId);
 
-        Field entityValueId(propertyTable, propertyTable.column(PropertyTable::EntityValueId));
+        Field entityValueId(propertyTable, PropertyTable::EntityValueId);
         SetConstraint constraint1(entityValueId, Constraint::NotIn, entityIds);
 
-        Field propertyValueId(propertyTable, propertyTable.column(PropertyTable::PropertyValueId));
+        Field propertyValueId(propertyTable, PropertyTable::PropertyValueId);
         SetConstraint constraint2(propertyValueId, Constraint::In, setToList(propertyIds));
 
         GroupConstraint constraint(GroupConstraint::And);
@@ -749,7 +750,7 @@ bool Storage::cleanupParentsValues(const Entity &entity, const Entity::IdsList &
         PropertyTable propertyTable((*i).second.id(), entity.id());
         Delete query(propertyTable);
 
-        Field propertyValueId(propertyTable, propertyTable.column(PropertyTable::PropertyValueId));
+        Field propertyValueId(propertyTable, PropertyTable::PropertyValueId);
         SetConstraint constraint(propertyValueId, Constraint::In, ids);
 
         query.where(constraint);
@@ -785,9 +786,9 @@ bool Storage::cleanupPropertyValues(const Entity &entity, const Entity::IdsList 
         PropertyTable propertyTable(entity.id(), (*i).second.entity.id());
 
         Select query(propertyTable);
-        query.select(propertyTable, propertyTable.column(PropertyTable::PropertyValueId));
+        query.select(propertyTable, PropertyTable::PropertyValueId);
 
-        Field entityValueId(propertyTable, propertyTable.column(PropertyTable::EntityValueId));
+        Field entityValueId(propertyTable, PropertyTable::EntityValueId);
         SetConstraint constraint(entityValueId, Constraint::In, ids);
         query.where(constraint);
 
@@ -821,7 +822,7 @@ bool Storage::cleanupPropertyValues(const Entity &entity, const Entity &property
     PropertyTable propertyTable(entity.id(), property.id());
 
     Select query(propertyTable);
-    query.select(propertyTable, propertyTable.column(PropertyTable::PropertyValueId));
+    query.select(propertyTable, PropertyTable::PropertyValueId);
 
     {
         Entity::Id id;
