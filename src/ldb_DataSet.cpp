@@ -28,7 +28,7 @@ DataSet::Columns::const_iterator::const_iterator() :
     m_value({ 0, NULL, Query::Fields::const_iterator() })
 {}
 
-DataSet::Columns::const_iterator::const_iterator(const DataSet &dataSet, const Query::Fields::const_iterator iterator) :
+DataSet::Columns::const_iterator::const_iterator(const DataSet &dataSet, const Query::Fields::const_iterator &iterator) :
     m_value({ 0, &dataSet, iterator })
 {}
 
@@ -73,6 +73,11 @@ bool DataSet::initialize(sqlite3_stmt *statement, const Query::Fields &fields)
 	m_columns = std::move(Columns(*this, fields));
 
 	return true;
+}
+
+bool DataSet::columnIsNull(unsigned char column) const
+{
+    return sqlite3_column_type(m_statement, column) == SQLITE_NULL;
 }
 
 void DataSet::columnValue(unsigned char column, Table::Column::Type type, void *value) const

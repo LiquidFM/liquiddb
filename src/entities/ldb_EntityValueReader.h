@@ -25,8 +25,6 @@
 #ifndef LDB_ENTITYVALUEREADER_H_
 #define LDB_ENTITYVALUEREADER_H_
 
-#include <efc/List>
-#include <efc/ScopedPointer>
 #include <efc/SharedPointer>
 #include <liquiddb/Query>
 #include <liquiddb/DataSet>
@@ -52,10 +50,11 @@ public:
 private:
     class Implementation;
     class Property;
+    class Context;
 
     typedef ::EFC::SharedPointer<Implementation> Holder;
-    typedef ::EFC::ScopedPointer<Property>       PropertyHolder;
-    typedef ::EFC::List<PropertyHolder>          PropertiesList;
+    typedef ::EFC::ScopedPointer<Context> ContextHolder;
+    typedef ::EFC::ScopedPointer<Property> PropertyHolder;
 
 private:
     friend class Storage;

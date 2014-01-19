@@ -63,9 +63,6 @@ public:
     bool removeValue(const EntityValue &entityValue, const EntityValue &propertyValue);
 
 private:
-    EntityValueReader perform(const Entity &entity, const Table &table, Select &query);
-
-private:
     bool loadEntities();
     bool loadProperties();
     bool loadMetaProperties();

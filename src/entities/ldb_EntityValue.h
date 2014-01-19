@@ -73,6 +73,7 @@ protected:
     EntityValue(Implementation *implementation);
 
 protected:
+    friend class EntityValueReader;
     Holder m_implementation;
 };
 
@@ -88,6 +89,7 @@ public:
 
 private:
     friend class EntityValue;
+    friend class EntityValueReader;
     class Implementation;
 };
 

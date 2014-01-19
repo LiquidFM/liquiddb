@@ -91,23 +91,41 @@ Storage::Storage(const char *fileName, bool create)
 
 EntityValueReader Storage::perform(const Entity &entity)
 {
-    EntityTable entityTable(entity);
-    Select query(entityTable);
+    EntityValueReader::ContextHolder context(new (std::nothrow) EntityValueReader::Context(entity));
 
-    query.select(entityTable);
+    if (LIKELY(context != NULL))
+    {
+        DataSet data;
+        Select query(context->entityTable());
 
-    return perform(entity, entityTable, query);
+        query.select(context->entityTable());
+        context->join(query);
+
+        if (m_database.perform(query, data))
+            return EntityValueReader(new (std::nothrow) EntityValueReader::Implementation(data, context));
+    }
+
+    return EntityValueReader();
 }
 
 EntityValueReader Storage::perform(const Entity &entity, const Constraint &constraint)
 {
-    EntityTable entityTable(entity);
-    Select query(entityTable);
+    EntityValueReader::ContextHolder context(new (std::nothrow) EntityValueReader::Context(entity));
 
-    query.select(entityTable);
-    query.where(constraint);
+    if (LIKELY(context != NULL))
+    {
+        DataSet data;
+        Select query(context->entityTable());
 
-    return perform(entity, entityTable, query);
+        query.select(context->entityTable());
+        context->join(query);
+        query.where(constraint);
+
+        if (m_database.perform(query, data))
+            return EntityValueReader(new (std::nothrow) EntityValueReader::Implementation(data, context));
+    }
+
+    return EntityValueReader();
 }
 
 Entity Storage::createEntity(Entity::Type type, const char *name, const char *title)
@@ -400,7 +418,7 @@ EntityValue Storage::addValue(const Entity &entity, const ::EFC::Variant &value)
     EntityTable entityTable(entity);
     Insert query(entityTable);
 
-    RawValue val;
+    RawValue val = {};
     RawValue::set(val, entity, value);
 
     query.insert(entityTable.column(EntityTable::Value), &val);
@@ -418,7 +436,7 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
     EntityTable entityTable(value.entity());
     Update query(entityTable);
 
-    RawValue val;
+    RawValue val = {};
     RawValue::set(val, value.entity(), newValue);
 
     query.update(entityTable.column(EntityTable::Value), &val);
@@ -475,32 +493,6 @@ bool Storage::removeValue(const EntityValue &entityValue, const EntityValue &pro
     }
 
     return false;
-}
-
-EntityValueReader Storage::perform(const Entity &entity, const Table &table, Select &query)
-{
-    DataSet data;
-    EntityValueReader::PropertiesList list;
-
-    for (Entity::Properties::const_iterator i = entity.properties().begin(), end = entity.properties().end(); i != end; ++i)
-    {
-        EntityValueReader::PropertyHolder property(new (std::nothrow) EntityValueReader::Property(table, entity, (*i).second.entity));
-
-        if (LIKELY(property != NULL))
-        {
-            query.join(property->join1());
-            query.join(property->join2());
-            query.select(property->propertyTable());
-
-            if (UNLIKELY(list.push_back(std::move(property))) == false)
-                return EntityValueReader();
-        }
-    }
-
-    if (m_database.perform(query, data))
-        return EntityValueReader(new (std::nothrow) EntityValueReader::Implementation(entity, data, list));
-
-    return EntityValueReader();
 }
 
 bool Storage::loadEntities()

@@ -63,6 +63,30 @@ namespace {
             }
         }
 
+        static inline void get(const RawValue &rawValue, size_t size, const Entity &entity, ::EFC::Variant &value)
+        {
+            switch (entity.type())
+            {
+                case Entity::Int:
+                    value.setInt32(rawValue.int32_value);
+                    break;
+
+                case Entity::String:
+                case Entity::Memo:
+                    value.setString(rawValue.string_value);
+                    break;
+
+                case Entity::Date:
+                case Entity::Time:
+                case Entity::DateTime:
+                    value.setUint64(rawValue.uint64_value);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
         int32_t int32_value;
         uint64_t uint64_value;
         const char *string_value;

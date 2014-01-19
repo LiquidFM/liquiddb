@@ -44,6 +44,7 @@ public:
             struct value_type
             {
                 const Table::Column *column() const { return (*iterator).column; }
+                bool isNull() const { return dataSet->columnIsNull(pos); }
                 void value(void *value) const { dataSet->columnValue(pos, column()->type, value); }
                 void value(const void **value, size_t &size) const { dataSet->columnValue(pos, column()->type, value, size); }
 
@@ -55,7 +56,7 @@ public:
             typedef const value_type &              reference;
 
             const_iterator();
-            const_iterator(const DataSet &dataSet, const Query::Fields::const_iterator iterator);
+            const_iterator(const DataSet &dataSet, const Query::Fields::const_iterator &iterator);
 
             reference operator*() const { return m_value; }
             pointer operator->() const { return &m_value; }
@@ -114,6 +115,7 @@ protected:
 
 private:
 	friend class Columns::const_iterator::value_type;
+    bool columnIsNull(unsigned char column) const;
     void columnValue(unsigned char column, Table::Column::Type type, void *value) const;
     void columnValue(unsigned char column, Table::Column::Type type, const void **value, size_t &size) const;
 	void columnValueInternal(unsigned char column, Table::Column::Type type, void **value, size_t &size) const;

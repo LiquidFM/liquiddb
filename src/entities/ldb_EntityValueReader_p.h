@@ -26,139 +26,18 @@
 #define LDB_ENTITYVALUEREADER_P_H_
 
 #include "ldb_EntityValueReader.h"
+#include "ldb_EntityValue_p.h"
+#include "ldb_Entity_p.h"
 
 #include "../structure/ldb_EntityTable.h"
 #include "../structure/ldb_PropertyTable.h"
 #include "../ldb_Join.h"
 
+#include <efc/List>
+#include <efc/ScopedPointer>
+
 
 namespace LiquidDb {
-
-class EntityValueReader::Implementation
-{
-public:
-    Implementation(const Entity &entity, DataSet &dataSet, PropertiesList &properties) :
-        m_afterLast(false),
-        m_beforeFirst(false),
-        m_entity(entity),
-        m_dataSet(std::move(dataSet)),
-        m_properties(std::move(properties))
-    {}
-
-    const Entity &entity() const { return m_entity; }
-
-    EntityValue next()
-    {
-        if (m_beforeFirst)
-            if (m_dataSet.next())
-            {
-                m_beforeFirst = false;
-                return doNext();
-            }
-            else
-            {
-                m_beforeFirst = false;
-                m_afterLast = true;
-                return EntityValue();
-            }
-        else
-            if (m_afterLast)
-                return EntityValue();
-            else
-                return doNext();
-    }
-
-    bool eof() const { return m_afterLast; }
-    bool bof() const { return m_beforeFirst; }
-    void close() { m_afterLast = true; }
-
-private:
-    EntityValue doNext()
-    {
-        Entity::Id id;
-        EntityValue value;
-        DataSet::Columns::const_iterator column = m_dataSet.columns().begin();
-        DataSet::Columns::const_iterator columnProperty;
-
-        (*column).value(&id);
-
-        if (m_entity.type() == Entity::Composite)
-        {
-            value = EntityValue::createValue(m_entity, id);
-
-            if (UNLIKELY(value.isValid() == false))
-                return EntityValue();
-
-            for (Entity::Id id = value.id(), nextId = id; id == nextId; (*column).value(&nextId))
-            {
-                ++(columnProperty = column);
-
-                for (Entity::Properties::const_iterator i = m_entity.properties().begin(), end = m_entity.properties().end(); i != end; ++i)
-                    if (UNLIKELY(property(value, (*i).second.entity, columnProperty) == false))
-                        return EntityValue();
-
-                if (!m_dataSet.next())
-                {
-                    m_afterLast = true;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            value = Implementation::value(id, column);
-
-            if (!m_dataSet.next())
-                m_afterLast = true;
-        }
-
-        return value;
-    }
-
-    EntityValue value(Entity::Id id, DataSet::Columns::const_iterator column) const
-    {
-//        switch (m_entity.type())
-//        {
-//            case Database::Int:
-//                return createValue(entity, id, contextValue<Database::Int>(m_context, column + 1));
-//            case Database::String:
-//                return createValue(entity, id, contextValue<Database::String>(m_context, column + 1));
-//            case Database::Date:
-//                return createValue(entity, id, contextValue<Database::Date>(m_context, column + 1));
-//            case Database::Time:
-//                return createValue(entity, id, contextValue<Database::Time>(m_context, column + 1));
-//            case Database::DateTime:
-//                return createValue(entity, id, contextValue<Database::DateTime>(m_context, column + 1));
-//            case Database::Memo:
-//                return createValue(entity, id, contextValue<Database::Memo>(m_context, column + 1));
-//            case Database::Rating:
-//                return createValue(entity, id, contextValue<Database::Rating>(m_context, column + 1));
-//            case Database::Path:
-//                return createValue(entity, id, contextValue<Database::Path>(m_context, column + 1));
-//            default:
-//                return EntityValue::Holder();
-//        }
-        return EntityValue();
-    }
-
-    bool property(const EntityValue &value, const Entity &property, DataSet::Columns::const_iterator &column) const
-    {
-        return false;
-    }
-
-    void skip(const Entity &property, int &column) const
-    {
-
-    }
-
-private:
-    mutable bool m_afterLast;
-    mutable bool m_beforeFirst;
-    Entity m_entity;
-    DataSet m_dataSet;
-    PropertiesList m_properties;
-};
-
 
 class EntityValueReader::Property
 {
@@ -189,6 +68,204 @@ private:
     Field m_fieldId2;
     Field m_propertyValueId;
     Join m_join2;
+};
+
+
+class EntityValueReader::Context
+{
+    typedef ::EFC::List<PropertyHolder> PropertiesList;
+
+public:
+    Context(const Entity &entity) :
+        m_entity(entity),
+        m_entityTable(m_entity)
+    {}
+
+    const Entity &entity() const { return m_entity; }
+    const EntityTable &entityTable() const { return m_entityTable; }
+
+    bool join(Select &query)
+    {
+        for (Entity::Properties::const_iterator i = m_entity.properties().begin(), end = m_entity.properties().end(); i != end; ++i)
+        {
+            PropertyHolder property(new (std::nothrow) Property(m_entityTable, m_entity, (*i).second.entity));
+
+            if (UNLIKELY(property == NULL))
+                return false;
+
+            query.join(property->join1());
+            query.join(property->join2());
+            query.select(property->propertyTable());
+
+            if (UNLIKELY(m_properties.push_back(std::move(property))) == false)
+                return false;
+        }
+
+        return true;
+    }
+
+private:
+    Entity m_entity;
+    EntityTable m_entityTable;
+    PropertiesList m_properties;
+};
+
+
+class EntityValueReader::Implementation
+{
+public:
+    Implementation(DataSet &dataSet, ContextHolder &context) :
+        m_afterLast(false),
+        m_beforeFirst(true),
+        m_dataSet(std::move(dataSet)),
+        m_context(std::move(context))
+    {}
+
+    const Entity &entity() const { return m_context->entity(); }
+
+    EntityValue next()
+    {
+        if (m_beforeFirst)
+            if (m_dataSet.next())
+            {
+                m_beforeFirst = false;
+                return doNext(m_context->entity());
+            }
+            else
+            {
+                m_beforeFirst = false;
+                m_afterLast = true;
+                return EntityValue();
+            }
+        else
+            if (m_afterLast)
+                return EntityValue();
+            else
+                return doNext(m_context->entity());
+    }
+
+    bool eof() const { return m_afterLast; }
+    bool bof() const { return m_beforeFirst; }
+    void close() { m_afterLast = true; }
+
+private:
+    EntityValue doNext(const Entity &entity)
+    {
+        Entity::Id id;
+        EntityValue value;
+        DataSet::Columns::const_iterator column = m_dataSet.columns().begin();
+        DataSet::Columns::const_iterator columnProperty;
+
+        (*column).value(&id);
+
+        if (entity.type() == Entity::Composite)
+        {
+            value = EntityValue::createValue(entity, id);
+
+            if (UNLIKELY(value.isValid() == false))
+                return EntityValue();
+
+            for (Entity::Id id = value.id(), nextId = id; id == nextId; (*column).value(&nextId))
+            {
+                ++(columnProperty = column);
+
+                for (Entity::Properties::const_iterator i = entity.properties().begin(), end = entity.properties().end(); i != end; ++i)
+                    property(value, (*i).second.entity, columnProperty);
+
+                if (!m_dataSet.next())
+                {
+                    m_afterLast = true;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            value = Implementation::value(entity, id, ++column);
+
+            if (!m_dataSet.next())
+                m_afterLast = true;
+        }
+
+        return value;
+    }
+
+    EntityValue value(const Entity &entity, Entity::Id id, const DataSet::Columns::const_iterator &column) const
+    {
+        size_t size = 0;
+        RawValue val = {};
+        ::EFC::Variant value;
+
+        (*column).value(&val);
+        RawValue::get(val, size, entity, value);
+
+        return EntityValue::createValue(entity, id, value);
+    }
+
+    void property(const EntityValue &value, const Entity &property, DataSet::Columns::const_iterator &column) const
+    {
+        if ((*column).isNull())
+            skip(property, column);
+        else
+        {
+            Entity::Id id;
+            EntityValue lastValue;
+
+            (*column).value(&id);
+            lastValue = static_cast<CompositeEntityValue::Implementation *>(value.m_implementation.get())->value(property, id);
+
+            if (lastValue.isValid())
+            {
+                if (property.type() != Entity::Composite)
+                    (++(++column));
+                else
+                {
+                    ++column;
+
+                    for (Entity::Properties::const_iterator i = property.properties().begin(), end = property.properties().end(); i != end; ++i)
+                        Implementation::property(lastValue, (*i).second.entity, column);
+                }
+
+                return;
+            }
+
+            if (property.type() == Entity::Composite)
+            {
+                EntityValue localValue(EntityValue::createValue(property, id));
+                ++column;
+
+                for (Entity::Properties::const_iterator i = property.properties().begin(), end = property.properties().end(); i != end; ++i)
+                    Implementation::property(localValue, (*i).second.entity, column);
+
+                EntityValue::addValue(value, localValue);
+            }
+            else
+            {
+                ++column;
+                EntityValue::addValue(value, Implementation::value(property, id, column));
+                ++column;
+            }
+        }
+    }
+
+    void skip(const Entity &property, DataSet::Columns::const_iterator &column) const
+    {
+        if (property.type() != Entity::Composite)
+            (++(++column));
+        else
+        {
+            ++column;
+
+            for (Entity::Properties::const_iterator i = property.properties().begin(), end = property.properties().end(); i != end; ++i)
+                skip((*i).second.entity, column);
+        }
+    }
+
+private:
+    mutable bool m_afterLast;
+    mutable bool m_beforeFirst;
+    DataSet m_dataSet;
+    ContextHolder m_context;
 };
 
 }
