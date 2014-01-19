@@ -26,10 +26,48 @@
 
 #include <efc/Map>
 #include <efc/String>
+#include <efc/Variant>
 #include <efc/ScopedPointer>
 #include "ldb_Entity.h"
 #include "ldb_EntityTitle.h"
 #include "../structure/ldb_EntitiesTable.h"
+
+
+namespace {
+    using namespace LiquidDb;
+
+    union RawValue
+    {
+        static inline void set(RawValue &rawValue, const Entity &entity, const ::EFC::Variant &value)
+        {
+            switch (entity.type())
+            {
+                case Entity::Int:
+                    rawValue.int32_value = value.asInt32();
+                    break;
+
+                case Entity::String:
+                case Entity::Memo:
+                    rawValue.string_value = value.asString();
+                    break;
+
+                case Entity::Date:
+                case Entity::Time:
+                case Entity::DateTime:
+                    rawValue.uint64_value = value.asUint64();
+                    break;
+
+                default:
+                    rawValue.uint64_value = 0;
+                    break;
+            }
+        }
+
+        int32_t int32_value;
+        uint64_t uint64_value;
+        const char *string_value;
+    };
+}
 
 
 namespace LiquidDb {

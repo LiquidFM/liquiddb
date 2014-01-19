@@ -23,6 +23,7 @@
  */
 
 #include "ldb_EntityConstraint.h"
+#include "ldb_Entity_p.h"
 #include "../ldb_conversions_p.h"
 
 #include "../structure/ldb_EntitiesTable.h"
@@ -53,39 +54,12 @@ int EntityConstraint::build(char *buffer, size_t size) const
         EntityTable entityTable(m_property);
         Field field(entityTable, EntityTable::Value);
 
-        switch (m_property.type())
-        {
-            case Entity::Int:
-            {
-                int32_t val = m_value.value().asInt32();
-                ConstConstraint constraint(field, m_op, &val);
+        RawValue val;
+        RawValue::set(val, m_property, m_value.value());
 
-                return constraint.build(buffer, size);
-            }
+        ConstConstraint constraint(field, m_op, &val);
 
-            case Entity::String:
-            case Entity::Memo:
-            {
-                ConstConstraint constraint(field, m_op, m_value.value().asString());
-
-                return constraint.build(buffer, size);
-            }
-
-            case Entity::Date:
-            case Entity::Time:
-            case Entity::DateTime:
-            {
-                uint64_t val = m_value.value().asUint64();
-                ConstConstraint constraint(field, m_op, &val);
-
-                return constraint.build(buffer, size);
-            }
-
-            default:
-                break;
-        }
-
-        return -1;
+        return constraint.build(buffer, size);
     }
     else
     {

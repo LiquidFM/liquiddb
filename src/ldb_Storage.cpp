@@ -400,48 +400,13 @@ EntityValue Storage::addValue(const Entity &entity, const ::EFC::Variant &value)
     EntityTable entityTable(entity);
     Insert query(entityTable);
 
-    switch (entity.type())
-    {
-        case Entity::Int:
-        {
-            int32_t val = value.asInt32();
+    RawValue val;
+    RawValue::set(val, entity, value);
 
-            query.insert(entityTable.column(EntityTable::Value), &val);
+    query.insert(entityTable.column(EntityTable::Value), &val);
 
-            if (m_database.perform(query, id))
-                return EntityValue::createValue(entity, id, value);
-
-            break;
-        }
-
-        case Entity::String:
-        case Entity::Memo:
-        {
-            query.insert(entityTable.column(EntityTable::Value), value.asString());
-
-            if (m_database.perform(query, id))
-                return EntityValue::createValue(entity, id, value);
-
-            break;
-        }
-
-        case Entity::Date:
-        case Entity::Time:
-        case Entity::DateTime:
-        {
-            uint64_t val = value.asUint64();
-
-            query.insert(entityTable.column(EntityTable::Value), &val);
-
-            if (m_database.perform(query, id))
-                return EntityValue::createValue(entity, id, value);
-
-            break;
-        }
-
-        default:
-            break;
-    }
+   if (m_database.perform(query, id))
+       return EntityValue::createValue(entity, id, value);
 
     return EntityValue();
 }
@@ -453,59 +418,16 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
     EntityTable entityTable(value.entity());
     Update query(entityTable);
 
-    switch (value.entity().type())
+    RawValue val;
+    RawValue::set(val, value.entity(), newValue);
+
+    query.update(entityTable.column(EntityTable::Value), &val);
+
+    if (m_database.perform(query))
     {
-        case Entity::Int:
-        {
-            int32_t val = newValue.asInt32();
-
-            query.update(entityTable.column(EntityTable::Value), &val);
-
-            if (m_database.perform(query))
-            {
-                ::EFC::Variant oldValue = std::move(EntityValue::updateValue(value, newValue));
-                m_undoStack.undoUpdateValue(value, oldValue);
-                return true;
-            }
-
-            break;
-        }
-
-        case Entity::String:
-        case Entity::Memo:
-        {
-            query.update(entityTable.column(EntityTable::Value), newValue.asString());
-
-            if (m_database.perform(query))
-            {
-                ::EFC::Variant oldValue = std::move(EntityValue::updateValue(value, newValue));
-                m_undoStack.undoUpdateValue(value, oldValue);
-                return true;
-            }
-
-            break;
-        }
-
-        case Entity::Date:
-        case Entity::Time:
-        case Entity::DateTime:
-        {
-            uint64_t val = newValue.asUint64();
-
-            query.update(entityTable.column(EntityTable::Value), &val);
-
-            if (m_database.perform(query))
-            {
-                ::EFC::Variant oldValue = std::move(EntityValue::updateValue(value, newValue));
-                m_undoStack.undoUpdateValue(value, oldValue);
-                return true;
-            }
-
-            break;
-        }
-
-        default:
-            break;
+        ::EFC::Variant oldValue = std::move(EntityValue::updateValue(value, newValue));
+        m_undoStack.undoUpdateValue(value, oldValue);
+        return true;
     }
 
     return false;
