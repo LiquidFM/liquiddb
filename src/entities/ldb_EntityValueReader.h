@@ -25,8 +25,11 @@
 #ifndef LDB_ENTITYVALUEREADER_H_
 #define LDB_ENTITYVALUEREADER_H_
 
-#include <efc/Variant>
+#include <efc/List>
+#include <efc/ScopedPointer>
+#include <efc/SharedPointer>
 #include <liquiddb/Query>
+#include <liquiddb/DataSet>
 #include <liquiddb/EntityValue>
 
 
@@ -36,26 +39,31 @@ class EntityValueReader
 {
 public:
     EntityValueReader();
-    EntityValueReader(const Entity &query);
+    ~EntityValueReader();
 
-//    bool isValid() const { return m_context.isValid(); }
-//    const Entity &entity() const { return m_context.entity(); }
+    bool isValid() const { return m_implementation != NULL; }
 
+    const Entity &entity() const;
     EntityValue next() const;
-    bool eof() const { return m_afterLast; }
-    bool bof() const { return m_beforeFirst; }
-    void close() { m_afterLast = true; }
-    void refresh();
+    bool eof() const;
+    bool bof() const;
+    void close();
 
 private:
-    EntityValue doNext() const;
-    EntityValue value(const Entity &entity, Entity::Id id, int column) const;
-    void property(const EntityValue &value, const Entity &property, int &column) const;
-    void skip(const Entity &property, int &column) const;
+    class Implementation;
+    class Property;
+
+    typedef ::EFC::SharedPointer<Implementation> Holder;
+    typedef ::EFC::ScopedPointer<Property>       PropertyHolder;
+    typedef ::EFC::List<PropertyHolder>          PropertiesList;
 
 private:
-    mutable bool m_afterLast;
-    mutable bool m_beforeFirst;
+    friend class Storage;
+    EntityValueReader(Holder &holder);
+    EntityValueReader(Implementation *implementation);
+
+private:
+    Holder m_implementation;
 };
 
 }

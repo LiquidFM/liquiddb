@@ -22,47 +22,48 @@
  * along with liquiddb. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ldb_EntityValueReader.h"
+#include "ldb_EntityValueReader_p.h"
 
 
 namespace LiquidDb {
 
-EntityValueReader::EntityValueReader() :
-    m_afterLast(false),
-    m_beforeFirst(false)
+EntityValueReader::EntityValueReader()
 {}
 
-EntityValueReader::EntityValueReader(const Entity &query)
+EntityValueReader::~EntityValueReader()
 {}
+
+const Entity &EntityValueReader::entity() const
+{
+    return m_implementation->entity();
+}
 
 EntityValue EntityValueReader::next() const
 {
-    return EntityValue();
+    return m_implementation->next();
 }
 
-void EntityValueReader::refresh()
+bool EntityValueReader::eof() const
 {
-
+    return m_implementation->eof();
 }
 
-EntityValue EntityValueReader::doNext() const
+bool EntityValueReader::bof() const
 {
-    return EntityValue();
+    return m_implementation->bof();
 }
 
-EntityValue EntityValueReader::value(const Entity &entity, Entity::Id id, int column) const
+void EntityValueReader::close()
 {
-    return EntityValue();
+    return m_implementation->close();
 }
 
-void EntityValueReader::property(const EntityValue &value, const Entity &property, int &column) const
-{
+EntityValueReader::EntityValueReader(Holder &holder) :
+    m_implementation(std::move(holder))
+{}
 
-}
-
-void EntityValueReader::skip(const Entity &property, int &column) const
-{
-
-}
+EntityValueReader::EntityValueReader(Implementation *implementation) :
+    m_implementation(implementation)
+{}
 
 }

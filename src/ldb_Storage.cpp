@@ -34,10 +34,8 @@
 #include "structure/ldb_PropertyTable.h"
 
 #include "entities/ldb_Entity_p.h"
-#include "entities/ldb_EntityValueReader.h"
+#include "entities/ldb_EntityValueReader_p.h"
 
-#include <efc/List>
-#include <efc/ScopedPointer>
 #include <brolly/assert.h>
 
 
@@ -60,39 +58,6 @@ namespace {
 
         return res;
     }
-
-    class JoinProperty
-    {
-    public:
-        JoinProperty(const Table &entityTable, const Entity &entity, const Entity &property) :
-            m_propertyTable(entity, property),
-            m_entityValueId(m_propertyTable, PropertyTable::EntityValueId),
-            m_fieldId1(entityTable, EntityTable::Id),
-            m_join1(m_entityValueId, Join::Equal, m_fieldId1),
-
-            m_entityPropertyTable(property),
-            m_fieldId2(m_entityPropertyTable, EntityTable::Id),
-            m_propertyValueId(m_propertyTable, PropertyTable::PropertyValueId),
-            m_join2(m_fieldId2, Join::Equal, m_propertyValueId)
-        {}
-
-        const Join &join1() const { return m_join1; }
-        const Join &join2() const { return m_join2; }
-        const EntityTable &propertyTable() const { return m_entityPropertyTable; }
-
-    private:
-        PropertyTable m_propertyTable;
-        Field m_entityValueId;
-        Field m_fieldId1;
-        Join m_join1;
-
-        EntityTable m_entityPropertyTable;
-        Field m_fieldId2;
-        Field m_propertyValueId;
-        Join m_join2;
-    };
-
-    typedef ::EFC::List< ::EFC::ScopedPointer<JoinProperty> > PropertiesList;
 }
 
 
@@ -593,11 +558,11 @@ bool Storage::removeValue(const EntityValue &entityValue, const EntityValue &pro
 EntityValueReader Storage::perform(const Entity &entity, const Table &table, Select &query)
 {
     DataSet data;
-    PropertiesList list;
+    EntityValueReader::PropertiesList list;
 
     for (Entity::Properties::const_iterator i = entity.properties().begin(), end = entity.properties().end(); i != end; ++i)
     {
-        ::EFC::ScopedPointer<JoinProperty> property(new (std::nothrow) JoinProperty(table, entity, (*i).second.entity));
+        EntityValueReader::PropertyHolder property(new (std::nothrow) EntityValueReader::Property(table, entity, (*i).second.entity));
 
         if (LIKELY(property != NULL))
         {
@@ -610,7 +575,8 @@ EntityValueReader Storage::perform(const Entity &entity, const Table &table, Sel
         }
     }
 
-    m_database.perform(query, data);
+    if (m_database.perform(query, data))
+        return EntityValueReader(new (std::nothrow) EntityValueReader::Implementation(entity, data, list));
 
     return EntityValueReader();
 }
@@ -625,16 +591,19 @@ bool Storage::loadEntities()
 
     if (m_database.perform(query, dataSet))
     {
+        Entity::Id id;
+        Entity::Type type;
+        BinaryValue nameValue[2];
+        DataSet::Columns::const_iterator column;
+
         while (dataSet.next())
         {
-            Entity::Id id;
-            Entity::Type type;
-            BinaryValue nameValue[2];
+            column = dataSet.columns().begin();
 
-            dataSet.columnValue(entitiesTable.column(EntitiesTable::Id), &id);
-            dataSet.columnValue(entitiesTable.column(EntitiesTable::Type), &type);
-            dataSet.columnValue(entitiesTable.column(EntitiesTable::Name), reinterpret_cast<const void **>(&nameValue[0].value), nameValue[0].size);
-            dataSet.columnValue(entitiesTable.column(EntitiesTable::Title), reinterpret_cast<const void **>(&nameValue[1].value), nameValue[1].size);
+            (*column).value(&id);
+            (*(++column)).value(&type);
+            (*(++column)).value(reinterpret_cast<const void **>(&nameValue[0].value), nameValue[0].size);
+            (*(++column)).value(reinterpret_cast<const void **>(&nameValue[1].value), nameValue[1].size);
 
             Entity entity(id, type, nameValue[0].value, nameValue[1].value);
 
@@ -655,6 +624,7 @@ bool Storage::loadProperties()
 {
     Entity::Id id;
     DataSet dataSet;
+    DataSet::Columns::const_iterator column;
     PropertiesTable propertiesTable;
     BinaryValue nameValue;
 
@@ -673,8 +643,10 @@ bool Storage::loadProperties()
         {
             while (dataSet.next())
             {
-                dataSet.columnValue(propertiesTable.column(PropertiesTable::PropertyId), &id);
-                dataSet.columnValue(propertiesTable.column(PropertiesTable::Name), reinterpret_cast<const void **>(&nameValue.value), nameValue.size);
+                column = dataSet.columns().begin();
+
+                (*(++(++column))).value(&id);
+                (*(++column)).value(reinterpret_cast<const void **>(&nameValue.value), nameValue.size);
 
                 q = m_entities.find(id);
 
@@ -755,13 +727,14 @@ bool Storage::removeOverlappingIds(const Entity &entity, const Entity &property,
                 {
                     Entity::Id id;
                     DataSet dataSet;
+                    DataSet::Columns::const_iterator column = dataSet.columns().begin();
 
                     if (!m_database.perform(query, dataSet))
                         return false;
 
                     while (dataSet.next())
                     {
-                        dataSet.columnValue(propertyTable.column(PropertyTable::PropertyValueId), &id);
+                        (*column).value(&id);
                         ids.erase(id);
                     }
                 }
@@ -801,9 +774,11 @@ bool Storage::removeSelfOverlappingIds(const Entity &entity, const Entity::IdsLi
             if (!m_database.perform(query, dataSet))
                 return false;
 
+            DataSet::Columns::const_iterator column = dataSet.columns().begin();
+
             while (dataSet.next())
             {
-                dataSet.columnValue(propertyTable.column(PropertyTable::PropertyValueId), &id);
+                (*column).value(&id);
                 propertyIds.erase(id);
             }
         }
@@ -880,11 +855,12 @@ bool Storage::cleanupPropertyValues(const Entity &entity, const Entity::IdsList 
             if (!m_database.perform(query, dataSet))
                 return false;
 
+            DataSet::Columns::const_iterator column = dataSet.columns().begin();
             propertyIds.clear();
 
             while (dataSet.next())
             {
-                dataSet.columnValue(propertyTable.column(PropertyTable::PropertyValueId), &id);
+                (*column).value(&id);
                 propertyIds.insert(id);
             }
         }
@@ -913,9 +889,11 @@ bool Storage::cleanupPropertyValues(const Entity &entity, const Entity &property
         if (!m_database.perform(query, dataSet))
             return false;
 
+        DataSet::Columns::const_iterator column = dataSet.columns().begin();
+
         while (dataSet.next())
         {
-            dataSet.columnValue(propertyTable.column(PropertyTable::PropertyValueId), &id);
+            (*column).value(&id);
             ids.insert(id);
         }
 

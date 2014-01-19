@@ -19,7 +19,7 @@
 #ifndef LDB_CONSTRAINT_H_
 #define LDB_CONSTRAINT_H_
 
-#include <efc/StaticList>
+#include <efc/StaticArray>
 #include <liquiddb/Field>
 #include <liquiddb/Link>
 #include <liquiddb/Entity>
@@ -102,7 +102,7 @@ private:
         MaxConstraints = 16
     };
 
-    typedef ::EFC::StaticList<const Constraint *, MaxConstraints> Container;
+    typedef ::EFC::StaticArray<const Constraint *, MaxConstraints> Container;
 
 private:
 	Type m_op;

@@ -19,7 +19,7 @@
 #ifndef LDB_QUERY_H_
 #define LDB_QUERY_H_
 
-#include <efc/StaticList>
+#include <efc/StaticArray>
 #include <liquiddb/Field>
 
 
@@ -39,9 +39,9 @@ public:
         MaxFields = 16
     };
 
-    typedef ::EFC::StaticList<Field, MaxFields> Fields;
-    typedef ::EFC::StaticList<const Join *, MaxFields> Joins;
-    typedef ::EFC::StaticList<const Constraint *, MaxFields> Constraints;
+    typedef ::EFC::StaticArray<Field, MaxFields> Fields;
+    typedef ::EFC::StaticArray<const Join *, MaxFields> Joins;
+    typedef ::EFC::StaticArray<const Constraint *, MaxFields> Constraints;
 
 	struct Value
 	{
@@ -50,7 +50,7 @@ public:
 		size_t size;
 	};
 
-    typedef ::EFC::StaticList<Value, MaxFields> Values;
+    typedef ::EFC::StaticArray<Value, MaxFields> Values;
 
 public:
 	Query();
