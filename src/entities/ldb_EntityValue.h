@@ -60,7 +60,7 @@ public:
     static void takeValue(const EntityValue &value, const EntityValue &property);
     static ::EFC::Variant updateValue(const EntityValue &value, const ::EFC::Variant &newValue);
     static void removeValue(const EntityValue &value, const EntityValue &property);
-    static void removeValue(const EntityValue &value, const Values &values);
+    static void removeValue(const EntityValue &value, const List &values);
     static EntityValue createValue(const Entity &entity, EntityValue::Id id);
     static EntityValue createValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value);
 

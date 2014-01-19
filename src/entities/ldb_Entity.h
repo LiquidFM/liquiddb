@@ -30,6 +30,7 @@
 #include <efc/String>
 #include <efc/SharedPointer>
 #include <liquiddb/Database>
+#include <platform/platform.h>
 
 
 namespace LiquidDb {
@@ -84,6 +85,11 @@ protected:
 
 private:
     friend class Storage;
+    friend class UndoAddEntity;
+    friend class UndoAddProperty;
+    friend class UndoRemoveEntity;
+    friend class UndoRemoveProperty;
+    friend class UndoRenameProperty;
     Holder m_implementation;
 };
 
@@ -92,6 +98,13 @@ struct Entity::Property
 {
     Property()
     {}
+
+#if PLATFORM_COMPILER_SUPPORTS(MOVE_SEMANTIC)
+    Property(const Entity &entity, ::EFC::String &&name) :
+        entity(entity),
+        name(std::move(name))
+    {}
+#endif
 
     Property(const Entity &entity, const ::EFC::String &name) :
         entity(entity),

@@ -22,18 +22,10 @@
  * along with liquiddb. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ldb_UndoStack.h"
+#include "ldb_UndoStack_p.h"
 
 
 namespace LiquidDb {
-
-class UndoStack::Command
-{
-public:
-    Command()
-    {}
-};
-
 
 UndoStack::UndoStack()
 {}
@@ -61,7 +53,7 @@ void UndoStack::undoAddEntity(const Entity &entity)
 
 }
 
-void UndoStack::undoRemoveEntity(const Entity &entity)
+void UndoStack::undoRemoveEntity(const Entity &entity, Names &names)
 {
 
 }

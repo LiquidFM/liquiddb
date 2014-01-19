@@ -120,7 +120,7 @@ public:
     void addParent(const Entity &parent) { m_parents.insert(Parents::value_type(parent.id(), parent)); }
     void removeParent(const Entity &parent) { m_parents.erase(parent.id()); }
 
-    void add(const Entity &property, const char *name) { m_properties.insert(Properties::value_type(property.id(), Property(property, name))); }
+    void add(const Entity &property, ::EFC::String &&name) { m_properties.insert(Properties::value_type(property.id(), Property(property, std::move(name)))); }
     ::EFC::String rename(const Entity &property, const char *name)
     {
         Entity::Property &prop = m_properties[property.id()];
@@ -128,6 +128,11 @@ public:
         prop.name = name;
 
         return tmp;
+    }
+    void rename(const Entity &property, ::EFC::String &&name)
+    {
+        Entity::Property &prop = m_properties[property.id()];
+        prop.name = std::move(name);
     }
     ::EFC::String remove(const Entity &property)
     {

@@ -68,7 +68,7 @@ void EntityValue::removeValue(const EntityValue &value, const EntityValue &prope
 
 }
 
-void EntityValue::removeValue(const EntityValue &value, const Values &values)
+void EntityValue::removeValue(const EntityValue &value, const List &values)
 {
 
 }

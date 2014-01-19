@@ -25,6 +25,7 @@
 #ifndef LDB_UNDOSTACK_H_
 #define LDB_UNDOSTACK_H_
 
+#include <efc/Map>
 #include <efc/List>
 #include <efc/String>
 #include <efc/Variant>
@@ -38,6 +39,14 @@ namespace LiquidDb {
 class UndoStack
 {
 public:
+    class Command;
+
+    typedef ::EFC::SharedPointer<Command>         Holder;
+    typedef ::EFC::List<Holder>                   List;
+    typedef ::EFC::List<List>                     Stack;
+    typedef ::EFC::Map<Entity::Id, ::EFC::String> Names;
+
+public:
     UndoStack();
     ~UndoStack();
 
@@ -46,7 +55,7 @@ public:
     void rollback();
 
     void undoAddEntity(const Entity &entity);
-    void undoRemoveEntity(const Entity &entity);
+    void undoRemoveEntity(const Entity &entity, Names &names);
     void undoAddProperty(const Entity &entity, const Entity &property);
     void undoRenameProperty(const Entity &entity, const Entity &property, ::EFC::String &name);
     void undoRemoveProperty(const Entity &entity, const Entity &property, ::EFC::String &name);
@@ -54,13 +63,6 @@ public:
     void undoAddValue(const EntityValue &entityValue, const EntityValue::List &propertyValues);
     void undoUpdateValue(const EntityValue &entityValue, ::EFC::Variant &value);
     void undoRemoveValue(const EntityValue &entityValue, const EntityValue &propertyValue);
-
-private:
-    class Command;
-
-    typedef ::EFC::SharedPointer<Command> Holder;
-    typedef ::EFC::List<Holder> List;
-    typedef ::EFC::List<List> Stack;
 
 private:
     Stack m_stack;
