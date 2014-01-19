@@ -38,7 +38,7 @@ const Entity &EntityValueReader::entity() const
     return m_implementation->entity();
 }
 
-EntityValue EntityValueReader::next() const
+EntityValue EntityValueReader::next()
 {
     return m_implementation->next();
 }

@@ -50,6 +50,7 @@ public:
     bool operator==(const EntityValue &other) const { return m_implementation == other.m_implementation; }
     bool operator!=(const EntityValue &other) const { return m_implementation != other.m_implementation; }
 
+    bool isValid() const { return m_implementation != NULL; }
     const Entity &entity() const;
 
     Id id() const;

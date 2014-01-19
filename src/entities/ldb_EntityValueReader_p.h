@@ -47,9 +47,25 @@ public:
 
     const Entity &entity() const { return m_entity; }
 
-    EntityValue next() const
+    EntityValue next()
     {
-        return EntityValue();
+        if (m_beforeFirst)
+            if (m_dataSet.next())
+            {
+                m_beforeFirst = false;
+                return doNext();
+            }
+            else
+            {
+                m_beforeFirst = false;
+                m_afterLast = true;
+                return EntityValue();
+            }
+        else
+            if (m_afterLast)
+                return EntityValue();
+            else
+                return doNext();
     }
 
     bool eof() const { return m_afterLast; }
@@ -57,10 +73,83 @@ public:
     void close() { m_afterLast = true; }
 
 private:
-    EntityValue doNext() const;
-    EntityValue value(const Entity &entity, Entity::Id id, int column) const;
-    void property(const EntityValue &value, const Entity &property, int &column) const;
-    void skip(const Entity &property, int &column) const;
+    EntityValue doNext()
+    {
+        Entity::Id id;
+        EntityValue value;
+        DataSet::Columns::const_iterator column = m_dataSet.columns().begin();
+        DataSet::Columns::const_iterator columnProperty;
+
+        (*column).value(&id);
+
+        if (m_entity.type() == Entity::Composite)
+        {
+            value = EntityValue::createValue(m_entity, id);
+
+            if (UNLIKELY(value.isValid() == false))
+                return EntityValue();
+
+            for (Entity::Id id = value.id(), nextId = id; id == nextId; (*column).value(&nextId))
+            {
+                ++(columnProperty = column);
+
+                for (Entity::Properties::const_iterator i = m_entity.properties().begin(), end = m_entity.properties().end(); i != end; ++i)
+                    if (UNLIKELY(property(value, (*i).second.entity, columnProperty) == false))
+                        return EntityValue();
+
+                if (!m_dataSet.next())
+                {
+                    m_afterLast = true;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            value = Implementation::value(id, column);
+
+            if (!m_dataSet.next())
+                m_afterLast = true;
+        }
+
+        return value;
+    }
+
+    EntityValue value(Entity::Id id, DataSet::Columns::const_iterator column) const
+    {
+//        switch (m_entity.type())
+//        {
+//            case Database::Int:
+//                return createValue(entity, id, contextValue<Database::Int>(m_context, column + 1));
+//            case Database::String:
+//                return createValue(entity, id, contextValue<Database::String>(m_context, column + 1));
+//            case Database::Date:
+//                return createValue(entity, id, contextValue<Database::Date>(m_context, column + 1));
+//            case Database::Time:
+//                return createValue(entity, id, contextValue<Database::Time>(m_context, column + 1));
+//            case Database::DateTime:
+//                return createValue(entity, id, contextValue<Database::DateTime>(m_context, column + 1));
+//            case Database::Memo:
+//                return createValue(entity, id, contextValue<Database::Memo>(m_context, column + 1));
+//            case Database::Rating:
+//                return createValue(entity, id, contextValue<Database::Rating>(m_context, column + 1));
+//            case Database::Path:
+//                return createValue(entity, id, contextValue<Database::Path>(m_context, column + 1));
+//            default:
+//                return EntityValue::Holder();
+//        }
+        return EntityValue();
+    }
+
+    bool property(const EntityValue &value, const Entity &property, DataSet::Columns::const_iterator &column) const
+    {
+        return false;
+    }
+
+    void skip(const Entity &property, int &column) const
+    {
+
+    }
 
 private:
     mutable bool m_afterLast;
