@@ -44,6 +44,10 @@ public:
 
     bool isValid() const { return m_database.lastError() == 0; }
 
+    bool transaction();
+    bool commit();
+    void rollback();
+
     EntityValueReader perform(const Entity &entity);
     EntityValueReader perform(const Entity &entity, const Constraint &constraint);
 
@@ -80,12 +84,9 @@ private:
     bool cleanupPropertyValues(const Entity &entity, const Entity &property);
 
 private:
-    typedef ::EFC::Map<Entity::Id, Entity> Entities;
-
-private:
-    Entities m_entities;
-    Database m_database;
+    UndoStack::Entities m_entities;
     UndoStack m_undoStack;
+    Database m_database;
 };
 
 }

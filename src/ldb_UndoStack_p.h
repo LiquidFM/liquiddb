@@ -32,6 +32,10 @@
 #include <efc/Map>
 
 
+/* FIXME: */
+WARN_UNUSED_RETURN_OFF
+
+
 namespace LiquidDb {
 
 class UndoStack::Command
@@ -40,7 +44,9 @@ public:
     typedef ::EFC::Map<Entity::Id, Entity> Entities;
 
 public:
-    virtual ~Command();
+    virtual ~Command()
+    {}
+
     virtual void undo(Entities &entities) = 0;
 };
 
@@ -48,10 +54,11 @@ public:
 class UndoUpdateValue : public UndoStack::Command
 {
 public:
-    UndoUpdateValue(const EntityValue &value, ::EFC::Variant &oldValue) :
-        m_value(value),
-        m_oldValue(std::move(oldValue))
-    {}
+    UndoUpdateValue(const EntityValue &value, const ::EFC::Variant &newValue) :
+        m_value(value)
+    {
+        m_oldValue = std::move(EntityValue::updateValue(value, newValue));
+    }
 
     virtual void undo(Entities &entities)
     {
@@ -67,11 +74,12 @@ private:
 class UndoRenameProperty : public UndoStack::Command
 {
 public:
-    UndoRenameProperty(const Entity &entity, const Entity &property, ::EFC::String &name) :
+    UndoRenameProperty(const Entity &entity, const Entity &property, const char *name) :
         m_entity(entity),
-        m_property(property),
-        m_name(std::move(name))
-    {}
+        m_property(property)
+    {
+        m_name = std::move(m_entity.m_implementation->rename(m_property, name));
+    }
 
     virtual void undo(Entities &entities)
     {
@@ -91,7 +99,9 @@ public:
     UndoRemoveValue(const EntityValue &entityValue, const EntityValue &propertyValue) :
         m_entityValue(entityValue),
         m_propertyValue(propertyValue)
-    {}
+    {
+        EntityValue::takeValue(m_entityValue, m_propertyValue);
+    }
 
     virtual void undo(Entities &entities)
     {
@@ -107,11 +117,13 @@ private:
 class UndoRemoveProperty : public UndoStack::Command
 {
 public:
-    UndoRemoveProperty(const Entity &entity, const Entity &property, ::EFC::String &name) :
+    UndoRemoveProperty(const Entity &entity, const Entity &property) :
         m_entity(entity),
-        m_property(property),
-        m_name(std::move(name))
-    {}
+        m_property(property)
+    {
+        m_name = std::move(m_entity.m_implementation->remove(m_property));
+        m_property.m_implementation->removeParent(m_entity);
+    }
 
     virtual void undo(Entities &entities)
     {
@@ -129,10 +141,17 @@ private:
 class UndoRemoveEntity : public UndoStack::Command
 {
 public:
-    UndoRemoveEntity(const Entity &entity, UndoStack::Names &names) :
-        m_entity(entity),
-        m_names(std::move(names))
-    {}
+    UndoRemoveEntity(const Entity &entity, Entities &entities) :
+        m_entity(entity)
+    {
+        for (Entity::Parents::const_iterator i = m_entity.parents().begin(), end = m_entity.parents().end(); i != end; ++i)
+            m_names[(*i).second.id()] = std::move((*i).second.m_implementation->remove(m_entity));
+
+        for (Entity::Properties::const_iterator i = m_entity.properties().begin(), end = m_entity.properties().end(); i != end; ++i)
+            (*i).second.entity.m_implementation->removeParent(m_entity);
+
+        entities.erase(m_entity.id());
+    }
 
     virtual void undo(Entities &entities)
     {
@@ -157,6 +176,7 @@ public:
     UndoAddValue(const EntityValue &entityValue, const EntityValue &propertyValue) :
         m_entityValue(entityValue)
     {
+        EntityValue::addValue(m_entityValue, propertyValue);
         m_propertyValues.push_back(propertyValue);
     }
 
@@ -179,10 +199,13 @@ private:
 class UndoAddProperty : public UndoStack::Command
 {
 public:
-    UndoAddProperty(const Entity &entity, const Entity &property) :
+    UndoAddProperty(const Entity &entity, const Entity &property, const char *name) :
         m_entity(entity),
         m_property(property)
-    {}
+    {
+        m_entity.m_implementation->add(property, name);
+        m_property.m_implementation->addParent(entity);
+    }
 
     virtual void undo(Entities &entities)
     {
@@ -199,9 +222,11 @@ private:
 class UndoAddEntity : public UndoStack::Command
 {
 public:
-    UndoAddEntity(const Entity &entity) :
-        m_entity(entity)
-    {}
+    UndoAddEntity(Entity::Id id, Entity::Type type, const char *name, const char *title, Entities &entities) :
+        m_entity(id, type, name, title)
+    {
+        entities[m_entity.id()] = m_entity;
+    }
 
     virtual void undo(Entities &entities)
     {
@@ -210,6 +235,8 @@ public:
         for (Entity::Properties::const_iterator i = m_entity.properties().begin(), end = m_entity.properties().end(); i != end; ++i)
             (*i).second.entity.m_implementation->removeParent(m_entity);
     }
+
+    const Entity &entity() const { return m_entity; }
 
 private:
     Entity m_entity;

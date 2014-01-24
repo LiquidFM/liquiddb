@@ -63,7 +63,8 @@ namespace {
 
 namespace LiquidDb {
 
-Storage::Storage(const char *fileName, bool create)
+Storage::Storage(const char *fileName, bool create) :
+    m_undoStack(m_entities)
 {
     if (m_database.open(fileName))
         if (create)
@@ -87,6 +88,32 @@ Storage::Storage(const char *fileName, bool create)
                 if (loadProperties())
                     loadMetaProperties();
         }
+}
+
+bool Storage::transaction()
+{
+    if (m_database.transaction())
+        if (UNLIKELY(m_undoStack.transaction() == false))
+            m_database.rollback();
+
+    return false;
+}
+
+bool Storage::commit()
+{
+    if (m_database.commit())
+    {
+        m_undoStack.commit();
+        return true;
+    }
+
+    return false;
+}
+
+void Storage::rollback()
+{
+    m_database.rollback();
+    m_undoStack.rollback();
 }
 
 EntityValueReader Storage::perform(const Entity &entity)
@@ -144,13 +171,7 @@ Entity Storage::createEntity(Entity::Type type, const char *name, const char *ti
         EntityTable entityTable(id, type);
 
         if (m_database.create(entityTable))
-        {
-            Entity entity(id, type, name, title);
-            m_entities[entity.id()] = entity;
-
-            m_undoStack.undoAddEntity(entity);
-            return entity;
-        }
+            return m_undoStack.undoAddEntity(id, type, name, title);
     }
 
     return Entity();
@@ -197,16 +218,7 @@ bool Storage::removeEntity(const Entity &entity)
     if (cleanupParentsValues(entity) &&
         (entity.type() != Entity::Composite || cleanupPropertyValues(entity)))
     {
-        UndoStack::Names names;
-
-        for (Entity::Parents::const_iterator i = entity.parents().begin(), end = entity.parents().end(); i != end; ++i)
-            names[(*i).second.id()] = std::move((*i).second.m_implementation->remove(entity));
-
-        for (Entity::Properties::const_iterator i = entity.properties().begin(), end = entity.properties().end(); i != end; ++i)
-            (*i).second.entity.m_implementation->removeParent(entity);
-
-        m_entities.erase(entity.id());
-        m_undoStack.undoRemoveEntity(entity, names);
+        return m_undoStack.undoRemoveEntity(entity);
     }
 
     return true;
@@ -236,13 +248,7 @@ bool Storage::addProperty(const Entity &entity, const Entity &property, const ch
             PropertyTable propertyTable(entity, property);
 
             if (m_database.create(propertyTable))
-            {
-                entity.m_implementation->add(property, name);
-                property.m_implementation->addParent(entity);
-
-                m_undoStack.undoAddProperty(entity, property);
-                return true;
-            }
+                return m_undoStack.undoAddProperty(entity, property, name);
         }
     }
 
@@ -274,12 +280,7 @@ bool Storage::renameProperty(const Entity &entity, const Entity &property, const
     query.where(constraint);
 
     if (m_database.perform(query))
-    {
-        ::EFC::String oldName = std::move(entity.m_implementation->rename(property, name));
-
-        m_undoStack.undoRenameProperty(entity, property, oldName);
-        return true;
-    }
+        return m_undoStack.undoRenameProperty(entity, property, name);
 
     return false;
 }
@@ -309,13 +310,7 @@ bool Storage::removeProperty(const Entity &entity, const Entity &property)
     query.where(constraint);
 
     if (m_database.perform(query))
-    {
-        ::EFC::String name = std::move(entity.m_implementation->remove(property));
-        property.m_implementation->removeParent(entity);
-
-        m_undoStack.undoRemoveProperty(entity, property, name);
-        return true;
-    }
+        return m_undoStack.undoRemoveProperty(entity, property);
 
     return false;
 }
@@ -355,12 +350,7 @@ bool Storage::addValue(const EntityValue &entityValue, const EntityValue &proper
         query.insert(propertyTable.column(PropertyTable::PropertyValueId), &propertyId);
 
         if (m_database.perform(query, id))
-        {
-            EntityValue::addValue(entityValue, propertyValue);
-
-            m_undoStack.undoAddValue(entityValue, propertyValue);
-            return true;
-        }
+            return m_undoStack.undoAddValue(entityValue, propertyValue);
     }
 
     return false;
@@ -409,7 +399,14 @@ bool Storage::addValue(const EntityValue &entityValue, const EntityValue::List &
         }
     }
 
-    m_undoStack.undoAddValue(entityValue, propertyValues);
+    if (UNLIKELY(m_undoStack.undoAddValue(entityValue, propertyValues) == false))
+    {
+        for (EntityValue::List::const_iterator i = propertyValues.begin(), end = propertyValues.end(); i != end; ++i)
+            EntityValue::removeValue(entityValue, *i);
+
+        return false;
+    }
+
     return true;
 }
 
@@ -446,12 +443,7 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
     query.update(entityTable.column(EntityTable::Value), &val);
 
     if (m_database.perform(query))
-    {
-        ::EFC::Variant oldValue = std::move(EntityValue::updateValue(value, newValue));
-
-        m_undoStack.undoUpdateValue(value, oldValue);
-        return true;
-    }
+        return m_undoStack.undoUpdateValue(value, newValue);
 
     return false;
 }
@@ -491,12 +483,7 @@ bool Storage::removeValue(const EntityValue &entityValue, const EntityValue &pro
     query.where(constraint);
 
     if (m_database.perform(query))
-    {
-        EntityValue::takeValue(entityValue, propertyValue);
-
-        m_undoStack.undoRemoveValue(entityValue, propertyValue);
-        return true;
-    }
+        return m_undoStack.undoRemoveValue(entityValue, propertyValue);
 
     return false;
 }
@@ -528,7 +515,7 @@ bool Storage::loadEntities()
             Entity entity(id, type, nameValue[0].value, nameValue[1].value);
 
             if (LIKELY(entity.isValid() == true))
-                m_entities.insert(Entities::value_type(id, std::move(entity)));
+                m_entities.insert(UndoStack::Entities::value_type(id, std::move(entity)));
             else
                 return false;
 
@@ -555,7 +542,7 @@ bool Storage::loadProperties()
     query.select(propertiesTable);
     query.where(constraint);
 
-    for (Entities::const_iterator q, i = m_entities.begin(), end = m_entities.end(); i != end; ++i)
+    for (UndoStack::Entities::const_iterator q, i = m_entities.begin(), end = m_entities.end(); i != end; ++i)
     {
         id = (*i).first;
 

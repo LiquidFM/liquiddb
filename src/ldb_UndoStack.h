@@ -32,6 +32,7 @@
 #include <efc/SharedPointer>
 #include <liquiddb/Entity>
 #include <liquiddb/EntityValue>
+#include <platform/platform.h>
 
 
 namespace LiquidDb {
@@ -45,26 +46,28 @@ public:
     typedef ::EFC::List<Holder>                   List;
     typedef ::EFC::List<List>                     Stack;
     typedef ::EFC::Map<Entity::Id, ::EFC::String> Names;
+    typedef ::EFC::Map<Entity::Id, Entity>        Entities;
 
 public:
-    UndoStack();
+    UndoStack(Entities &entities);
     ~UndoStack();
 
     bool transaction();
-    bool commit();
+    void commit();
     void rollback();
 
-    void undoAddEntity(const Entity &entity);
-    void undoRemoveEntity(const Entity &entity, Names &names);
-    void undoAddProperty(const Entity &entity, const Entity &property);
-    void undoRenameProperty(const Entity &entity, const Entity &property, ::EFC::String &name);
-    void undoRemoveProperty(const Entity &entity, const Entity &property, ::EFC::String &name);
-    void undoAddValue(const EntityValue &entityValue, const EntityValue &propertyValue);
-    void undoAddValue(const EntityValue &entityValue, const EntityValue::List &propertyValues);
-    void undoUpdateValue(const EntityValue &entityValue, ::EFC::Variant &value);
-    void undoRemoveValue(const EntityValue &entityValue, const EntityValue &propertyValue);
+    WARN_UNUSED_RETURN Entity undoAddEntity(Entity::Id id, Entity::Type type, const char *name, const char *title);
+    WARN_UNUSED_RETURN bool undoRemoveEntity(const Entity &entity);
+    WARN_UNUSED_RETURN bool undoAddProperty(const Entity &entity, const Entity &property, const char *name);
+    WARN_UNUSED_RETURN bool undoRenameProperty(const Entity &entity, const Entity &property, const char *name);
+    WARN_UNUSED_RETURN bool undoRemoveProperty(const Entity &entity, const Entity &property);
+    WARN_UNUSED_RETURN bool undoAddValue(const EntityValue &entityValue, const EntityValue &propertyValue);
+    WARN_UNUSED_RETURN bool undoAddValue(const EntityValue &entityValue, const EntityValue::List &propertyValues);
+    WARN_UNUSED_RETURN bool undoUpdateValue(const EntityValue &entityValue, const ::EFC::Variant &value);
+    WARN_UNUSED_RETURN bool undoRemoveValue(const EntityValue &entityValue, const EntityValue &propertyValue);
 
 private:
+    UndoStack::Entities &m_entities;
     Stack m_stack;
 };
 

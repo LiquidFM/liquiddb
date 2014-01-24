@@ -24,10 +24,13 @@
 
 #include "ldb_UndoStack_p.h"
 
+#include <brolly/assert.h>
+
 
 namespace LiquidDb {
 
-UndoStack::UndoStack()
+UndoStack::UndoStack(Entities &entities) :
+    m_entities(entities)
 {}
 
 UndoStack::~UndoStack()
@@ -35,12 +38,12 @@ UndoStack::~UndoStack()
 
 bool UndoStack::transaction()
 {
-    return false;
+    return m_stack.push_back(List());
 }
 
-bool UndoStack::commit()
+void UndoStack::commit()
 {
-    return false;
+
 }
 
 void UndoStack::rollback()
@@ -48,49 +51,64 @@ void UndoStack::rollback()
 
 }
 
-void UndoStack::undoAddEntity(const Entity &entity)
+Entity UndoStack::undoAddEntity(Entity::Id id, Entity::Type type, const char *name, const char *title)
 {
+    ASSERT(!m_stack.empty());
+    Holder holder(new (std::nothrow) UndoAddEntity(id, type, name, title, m_entities));
 
+    if (LIKELY(holder != NULL))
+        if (LIKELY(m_stack.back().push_back(holder) == true))
+            return static_cast<UndoAddEntity *>(holder.get())->entity();
+
+    return Entity();
 }
 
-void UndoStack::undoRemoveEntity(const Entity &entity, Names &names)
+bool UndoStack::undoRemoveEntity(const Entity &entity)
 {
-
+    ASSERT(!m_stack.empty());
+    return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoRemoveEntity(entity, m_entities))));
 }
 
-void UndoStack::undoAddProperty(const Entity &entity, const Entity &property)
+bool UndoStack::undoAddProperty(const Entity &entity, const Entity &property, const char *name)
 {
-
+    ASSERT(!m_stack.empty());
+    return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoAddProperty(entity, property, name))));
 }
 
-void UndoStack::undoRenameProperty(const Entity &entity, const Entity &property, ::EFC::String &name)
+bool UndoStack::undoRenameProperty(const Entity &entity, const Entity &property, const char *name)
 {
-
+    ASSERT(!m_stack.empty());
+    return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoRenameProperty(entity, property, name))));
 }
 
-void UndoStack::undoRemoveProperty(const Entity &entity, const Entity &property, ::EFC::String &name)
+bool UndoStack::undoRemoveProperty(const Entity &entity, const Entity &property)
 {
-
+    ASSERT(!m_stack.empty());
+    return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoRemoveProperty(entity, property))));
 }
 
-void UndoStack::undoAddValue(const EntityValue &entityValue, const EntityValue &propertyValue)
+bool UndoStack::undoAddValue(const EntityValue &entityValue, const EntityValue &propertyValue)
 {
-
+    ASSERT(!m_stack.empty());
+    return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoAddValue(entityValue, propertyValue))));
 }
 
-void UndoStack::undoAddValue(const EntityValue &entityValue, const EntityValue::List &propertyValues)
+bool UndoStack::undoAddValue(const EntityValue &entityValue, const EntityValue::List &propertyValues)
 {
-
+    ASSERT(!m_stack.empty());
+    return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoAddValue(entityValue, propertyValues))));
 }
 
-void UndoStack::undoUpdateValue(const EntityValue &entityValue, ::EFC::Variant &value)
+bool UndoStack::undoUpdateValue(const EntityValue &entityValue, const ::EFC::Variant &value)
 {
-
+    ASSERT(!m_stack.empty());
+    return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoUpdateValue(entityValue, value))));
 }
 
-void UndoStack::undoRemoveValue(const EntityValue &entityValue, const EntityValue &propertyValue)
+bool UndoStack::undoRemoveValue(const EntityValue &entityValue, const EntityValue &propertyValue)
 {
-
+    ASSERT(!m_stack.empty());
+    return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoRemoveValue(entityValue, propertyValue))));
 }
 
 }
