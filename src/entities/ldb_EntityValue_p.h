@@ -46,7 +46,7 @@ public:
 
     Id id() const { return m_id; }
     virtual ::EFC::Variant value() const { return m_value; }
-    void setValue(const ::EFC::Variant &value) { m_value = value; }
+    ::EFC::Variant setValue(const ::EFC::Variant &value) { ::EFC::Variant tmp(m_value); m_value = value; return tmp; }
 
 protected:
     Implementation(const Entity &entity, Id id) :
@@ -119,30 +119,30 @@ public:
         m_value = ::EFC::Variant();
     }
 
-    void add(const Entity &property, const EntityValue &value)
+    void add(const EntityValue &value)
     {
-        m_items[property][value.id()] = value;
+        m_items[value.entity()][value.id()] = value;
         m_value = ::EFC::Variant();
     }
 
-    void add(const Entity &property, const Values &values)
+    void add(const List &values)
     {
-        m_items[property] = values;
+        for (List::const_iterator i = values.begin(), end = values.end(); i != end; ++i)
+            m_items[i->entity()][i->id()] = (*i);
+
         m_value = ::EFC::Variant();
     }
 
-    void remove(const Entity &property, const EntityValue &value)
+    void remove(const EntityValue &value)
     {
-        m_items[property].erase(value.id());
+        m_items[value.entity()].erase(value.id());
         m_value = ::EFC::Variant();
     }
 
-    void remove(const Entity &property, const Values &values)
+    void remove(const List &values)
     {
-        Values &map = m_items[property];
-
-        for (Values::const_iterator i = values.begin(), end = values.end(); i != end; ++i)
-            map.erase((*i).first);
+        for (List::const_iterator i = values.begin(), end = values.end(); i != end; ++i)
+            m_items[i->entity()].erase(i->id());
 
         m_value = ::EFC::Variant();
     }

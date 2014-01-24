@@ -50,27 +50,27 @@ EntityValue::Id EntityValue::id() const
 
 void EntityValue::addValue(const EntityValue &value, const EntityValue &property)
 {
-
+    static_cast<CompositeEntityValue::Implementation *>(value.m_implementation.get())->add(property);
 }
 
 void EntityValue::takeValue(const EntityValue &value, const EntityValue &property)
 {
-
+    static_cast<CompositeEntityValue::Implementation *>(value.m_implementation.get())->remove(property);
 }
 
 ::EFC::Variant EntityValue::updateValue(const EntityValue &value, const ::EFC::Variant &newValue)
 {
-    return ::EFC::Variant();
+    return static_cast<EntityValue::Implementation *>(value.m_implementation.get())->setValue(newValue);
 }
 
 void EntityValue::removeValue(const EntityValue &value, const EntityValue &property)
 {
-
+    static_cast<CompositeEntityValue::Implementation *>(value.m_implementation.get())->remove(property);
 }
 
 void EntityValue::removeValue(const EntityValue &value, const List &values)
 {
-
+    static_cast<CompositeEntityValue::Implementation *>(value.m_implementation.get())->remove(values);
 }
 
 EntityValue EntityValue::createValue(const Entity &entity, EntityValue::Id id)
