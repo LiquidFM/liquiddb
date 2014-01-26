@@ -35,6 +35,10 @@ class EntityConstraint : public Constraint
 public:
     EntityConstraint(const Entity &property, Operator op, const EntityValue &value);
 
+    const Entity &property() const { return m_property; }
+    Operator op() const { return m_op; }
+    const EntityValue &value() const { return m_value; }
+
     virtual int build(char *buffer, size_t size) const;
 
 private:

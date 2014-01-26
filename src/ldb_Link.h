@@ -50,7 +50,6 @@ public:
 
 	virtual int build(char *buffer, size_t size) const = 0;
 
-protected:
 	static const char *operatorToString(Operator op);
     static const char *operatorToString(RangeOperator op);
 };

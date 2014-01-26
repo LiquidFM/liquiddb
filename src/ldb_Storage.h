@@ -25,6 +25,7 @@
 #define LDB_STORAGE_H_
 
 #include <efc/Map>
+#include <efc/String>
 #include <liquiddb/Database>
 #include <liquiddb/EntityValue>
 #include <liquiddb/UndoStack>
@@ -40,22 +41,26 @@ class EntityValueReader;
 class Storage
 {
 public:
-    Storage(const char *fileName, bool create);
+    typedef UndoStack::Entities Entities;
+
+public:
+    Storage(const ::EFC::String &fileName, bool create);
 
     bool isValid() const { return m_database.lastError() == 0; }
+    const Entities &entities() const { return m_entities; }
 
     bool transaction();
     bool commit();
     void rollback();
 
-    EntityValueReader perform(const Entity &entity);
-    EntityValueReader perform(const Entity &entity, const Constraint &constraint);
+    EntityValueReader entityValues(const Entity &entity);
+    EntityValueReader entityValues(const Entity &entity, const Constraint &constraint);
 
-    Entity createEntity(Entity::Type type, const char *name, const char *title);
+    Entity createEntity(Entity::Type type, const ::EFC::String &name, const ::EFC::String &title);
     bool removeEntity(const Entity &entity);
 
-    bool addProperty(const Entity &entity, const Entity &property, const char *name);
-    bool renameProperty(const Entity &entity, const Entity &property, const char *name);
+    bool addProperty(const Entity &entity, const Entity &property, const ::EFC::String &name);
+    bool renameProperty(const Entity &entity, const Entity &property, const ::EFC::String &name);
     bool removeProperty(const Entity &entity, const Entity &property);
 
     EntityValue addValue(const Entity &entity);
@@ -84,7 +89,7 @@ private:
     bool cleanupPropertyValues(const Entity &entity, const Entity &property);
 
 private:
-    UndoStack::Entities m_entities;
+    Entities m_entities;
     UndoStack m_undoStack;
     Database m_database;
 };

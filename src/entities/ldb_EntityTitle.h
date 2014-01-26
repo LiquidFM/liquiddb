@@ -45,7 +45,7 @@ public:
     typedef Container::const_iterator const_iterator;
 
 public:
-    EntityTitle(const char *format);
+    EntityTitle(const ::EFC::String &format);
 
     bool isValid() const { return !m_items.empty(); }
 

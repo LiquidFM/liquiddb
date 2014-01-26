@@ -33,6 +33,11 @@ EntityValueReader::EntityValueReader()
 EntityValueReader::~EntityValueReader()
 {}
 
+bool EntityValueReader::isValid() const
+{
+    return m_implementation != NULL && m_implementation->isValid();
+}
+
 const Entity &EntityValueReader::entity() const
 {
     return m_implementation->entity();
@@ -51,6 +56,11 @@ bool EntityValueReader::eof() const
 bool EntityValueReader::bof() const
 {
     return m_implementation->bof();
+}
+
+void EntityValueReader::refresh()
+{
+    return m_implementation->refresh();
 }
 
 void EntityValueReader::close()

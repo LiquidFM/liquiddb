@@ -61,7 +61,7 @@ public:
 
 public:
     Entity();
-    Entity(Id id, Type type, const char *name, const char *title);
+    Entity(Id id, Type type, const ::EFC::String &name, const ::EFC::String &title);
     ~Entity();
 
     bool operator<(const Entity &other) const { return m_implementation < other.m_implementation; }

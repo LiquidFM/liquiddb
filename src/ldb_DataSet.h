@@ -106,6 +106,7 @@ public:
 	bool isValid() const;
 	int lastError() const { return m_error; }
 	bool next();
+	void reset();
 
 	const Columns &columns() const { return m_columns; }
 

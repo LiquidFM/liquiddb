@@ -99,7 +99,7 @@ namespace LiquidDb {
 class Entity::Implementation
 {
 public:
-    Implementation(Id id, Type type, const char *name, const char *title) :
+    Implementation(Id id, Type type, const ::EFC::String &name, const ::EFC::String &title) :
         m_id(id),
         m_type(type),
         m_name(name),
@@ -120,8 +120,15 @@ public:
     void addParent(const Entity &parent) { m_parents.insert(Parents::value_type(parent.id(), parent)); }
     void removeParent(const Entity &parent) { m_parents.erase(parent.id()); }
 
-    void add(const Entity &property, ::EFC::String &&name) { m_properties.insert(Properties::value_type(property.id(), Property(property, std::move(name)))); }
-    ::EFC::String rename(const Entity &property, const char *name)
+    void add(const Entity &property, const ::EFC::String &name)
+    {
+        m_properties.insert(Properties::value_type(property.id(), Property(property, name)));
+    }
+    void add(const Entity &property, ::EFC::String &&name)
+    {
+        m_properties.insert(Properties::value_type(property.id(), Property(property, std::move(name))));
+    }
+    ::EFC::String rename(const Entity &property, const ::EFC::String &name)
     {
         Entity::Property &prop = m_properties[property.id()];
         ::EFC::String tmp(std::move(prop.name));

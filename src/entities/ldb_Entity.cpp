@@ -30,7 +30,7 @@ namespace LiquidDb {
 Entity::Entity()
 {}
 
-Entity::Entity(Id id, Type type, const char *name, const char *title) :
+Entity::Entity(Id id, Type type, const ::EFC::String &name, const ::EFC::String &title) :
     m_implementation(new (std::nothrow) Implementation(id, type, name, title))
 {}
 

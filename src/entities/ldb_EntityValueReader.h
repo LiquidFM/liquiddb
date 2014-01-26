@@ -39,12 +39,13 @@ public:
     EntityValueReader();
     ~EntityValueReader();
 
-    bool isValid() const { return m_implementation != NULL; }
+    bool isValid() const;
 
     const Entity &entity() const;
     EntityValue next();
     bool eof() const;
     bool bof() const;
+    void refresh();
     void close();
 
 private:

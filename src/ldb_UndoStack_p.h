@@ -74,7 +74,7 @@ private:
 class UndoRenameProperty : public UndoStack::Command
 {
 public:
-    UndoRenameProperty(const Entity &entity, const Entity &property, const char *name) :
+    UndoRenameProperty(const Entity &entity, const Entity &property, const ::EFC::String &name) :
         m_entity(entity),
         m_property(property)
     {
@@ -199,7 +199,7 @@ private:
 class UndoAddProperty : public UndoStack::Command
 {
 public:
-    UndoAddProperty(const Entity &entity, const Entity &property, const char *name) :
+    UndoAddProperty(const Entity &entity, const Entity &property, const ::EFC::String &name) :
         m_entity(entity),
         m_property(property)
     {
@@ -222,7 +222,7 @@ private:
 class UndoAddEntity : public UndoStack::Command
 {
 public:
-    UndoAddEntity(Entity::Id id, Entity::Type type, const char *name, const char *title, Entities &entities) :
+    UndoAddEntity(Entity::Id id, Entity::Type type, const ::EFC::String &name, const ::EFC::String &title, Entities &entities) :
         m_entity(id, type, name, title)
     {
         entities[m_entity.id()] = m_entity;

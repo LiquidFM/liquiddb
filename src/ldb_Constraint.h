@@ -89,11 +89,13 @@ public:
 public:
 	GroupConstraint(Type op = And);
 
-	void add(const Constraint &constraint) { m_constraints.push_back(&constraint); }
+    Type type() const { return m_op; }
+    void setType(Type type) { m_op = type; }
+
+    void add(const Constraint &constraint) { m_constraints.push_back(&constraint); }
 
 	virtual int build(char *buffer, size_t size) const;
 
-protected:
 	static const char *operatorToString(Type op);
 
 private:

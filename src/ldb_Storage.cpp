@@ -63,7 +63,7 @@ namespace {
 
 namespace LiquidDb {
 
-Storage::Storage(const char *fileName, bool create) :
+Storage::Storage(const ::EFC::String &fileName, bool create) :
     m_undoStack(m_entities)
 {
     if (m_database.open(fileName))
@@ -116,7 +116,7 @@ void Storage::rollback()
     m_undoStack.rollback();
 }
 
-EntityValueReader Storage::perform(const Entity &entity)
+EntityValueReader Storage::entityValues(const Entity &entity)
 {
     EntityValueReader::ContextHolder context(new (std::nothrow) EntityValueReader::Context(entity));
 
@@ -126,7 +126,7 @@ EntityValueReader Storage::perform(const Entity &entity)
         Select query(context->entityTable());
 
         query.select(context->entityTable());
-        context->join(query);
+        context->setupQuery(query);
 
         if (m_database.perform(query, data))
             return EntityValueReader(new (std::nothrow) EntityValueReader::Implementation(data, context));
@@ -135,7 +135,7 @@ EntityValueReader Storage::perform(const Entity &entity)
     return EntityValueReader();
 }
 
-EntityValueReader Storage::perform(const Entity &entity, const Constraint &constraint)
+EntityValueReader Storage::entityValues(const Entity &entity, const Constraint &constraint)
 {
     EntityValueReader::ContextHolder context(new (std::nothrow) EntityValueReader::Context(entity));
 
@@ -145,7 +145,7 @@ EntityValueReader Storage::perform(const Entity &entity, const Constraint &const
         Select query(context->entityTable());
 
         query.select(context->entityTable());
-        context->join(query);
+        context->setupQuery(query);
         query.where(constraint);
 
         if (m_database.perform(query, data))
@@ -155,7 +155,7 @@ EntityValueReader Storage::perform(const Entity &entity, const Constraint &const
     return EntityValueReader();
 }
 
-Entity Storage::createEntity(Entity::Type type, const char *name, const char *title)
+Entity Storage::createEntity(Entity::Type type, const ::EFC::String &name, const ::EFC::String &title)
 {
     Entity::Id id;
 
@@ -163,8 +163,8 @@ Entity Storage::createEntity(Entity::Type type, const char *name, const char *ti
     Insert query(entitiesTable);
 
     query.insert(entitiesTable.column(EntitiesTable::Type), &type);
-    query.insert(entitiesTable.column(EntitiesTable::Name), name);
-    query.insert(entitiesTable.column(EntitiesTable::Title), title);
+    query.insert(entitiesTable.column(EntitiesTable::Name), name.c_str());
+    query.insert(entitiesTable.column(EntitiesTable::Title), title.c_str());
 
     if (m_database.perform(query, id))
     {
@@ -224,7 +224,7 @@ bool Storage::removeEntity(const Entity &entity)
     return true;
 }
 
-bool Storage::addProperty(const Entity &entity, const Entity &property, const char *name)
+bool Storage::addProperty(const Entity &entity, const Entity &property, const ::EFC::String &name)
 {
     ASSERT(entity != property);
     ASSERT(entity.type() == Entity::Composite);
@@ -241,7 +241,7 @@ bool Storage::addProperty(const Entity &entity, const Entity &property, const ch
 
         query.insert(propertiesTable.column(PropertiesTable::EntityId), &entityId);
         query.insert(propertiesTable.column(PropertiesTable::PropertyId), &propertyId);
-        query.insert(propertiesTable.column(PropertiesTable::Name), name);
+        query.insert(propertiesTable.column(PropertiesTable::Name), name.c_str());
 
         if (m_database.perform(query, id))
         {
@@ -255,7 +255,7 @@ bool Storage::addProperty(const Entity &entity, const Entity &property, const ch
     return false;
 }
 
-bool Storage::renameProperty(const Entity &entity, const Entity &property, const char *name)
+bool Storage::renameProperty(const Entity &entity, const Entity &property, const ::EFC::String &name)
 {
     ASSERT(entity.properties().find(property.id()) != entity.properties().end());
 
@@ -265,7 +265,7 @@ bool Storage::renameProperty(const Entity &entity, const Entity &property, const
     PropertiesTable propertiesTable;
     Update query(propertiesTable);
 
-    query.update(propertiesTable.column(PropertiesTable::Name), name);
+    query.update(propertiesTable.column(PropertiesTable::Name), name.c_str());
 
     Field entityIdField(propertiesTable, PropertiesTable::EntityId);
     ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
@@ -515,7 +515,7 @@ bool Storage::loadEntities()
             Entity entity(id, type, nameValue[0].value, nameValue[1].value);
 
             if (LIKELY(entity.isValid() == true))
-                m_entities.insert(UndoStack::Entities::value_type(id, std::move(entity)));
+                m_entities.insert(Entities::value_type(id, std::move(entity)));
             else
                 return false;
 
@@ -542,7 +542,7 @@ bool Storage::loadProperties()
     query.select(propertiesTable);
     query.where(constraint);
 
-    for (UndoStack::Entities::const_iterator q, i = m_entities.begin(), end = m_entities.end(); i != end; ++i)
+    for (Entities::const_iterator q, i = m_entities.begin(), end = m_entities.end(); i != end; ++i)
     {
         id = (*i).first;
 

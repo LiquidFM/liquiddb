@@ -20,6 +20,7 @@
 #define LDB_DATABASE_H_
 
 #include <cstdint>
+#include <efc/String>
 #include <platform/utils.h>
 
 
@@ -57,7 +58,7 @@ public:
 
 	int lastError() const { return m_error; }
 
-	bool open(const char *filename);
+	bool open(const ::EFC::String &filename);
 	bool exsitst(const Table &table) const;
 	bool create(const Table &table);
     bool remove(const Table &table);

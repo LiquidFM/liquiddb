@@ -51,7 +51,7 @@ void UndoStack::rollback()
 
 }
 
-Entity UndoStack::undoAddEntity(Entity::Id id, Entity::Type type, const char *name, const char *title)
+Entity UndoStack::undoAddEntity(Entity::Id id, Entity::Type type, const ::EFC::String &name, const ::EFC::String &title)
 {
     ASSERT(!m_stack.empty());
     Holder holder(new (std::nothrow) UndoAddEntity(id, type, name, title, m_entities));
@@ -69,13 +69,13 @@ bool UndoStack::undoRemoveEntity(const Entity &entity)
     return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoRemoveEntity(entity, m_entities))));
 }
 
-bool UndoStack::undoAddProperty(const Entity &entity, const Entity &property, const char *name)
+bool UndoStack::undoAddProperty(const Entity &entity, const Entity &property, const ::EFC::String &name)
 {
     ASSERT(!m_stack.empty());
     return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoAddProperty(entity, property, name))));
 }
 
-bool UndoStack::undoRenameProperty(const Entity &entity, const Entity &property, const char *name)
+bool UndoStack::undoRenameProperty(const Entity &entity, const Entity &property, const ::EFC::String &name)
 {
     ASSERT(!m_stack.empty());
     return m_stack.back().push_back(std::move(Holder(new (std::nothrow) UndoRenameProperty(entity, property, name))));

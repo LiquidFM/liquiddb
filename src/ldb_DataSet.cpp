@@ -62,6 +62,11 @@ bool DataSet::next()
 	return (m_error = sqlite3_step(m_statement)) == SQLITE_ROW;
 }
 
+void DataSet::reset()
+{
+    m_error = sqlite3_reset(m_statement);
+}
+
 bool DataSet::initialize(sqlite3_stmt *statement, const Query::Fields &fields)
 {
 	ASSERT(statement != NULL);

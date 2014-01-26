@@ -56,10 +56,10 @@ public:
     void commit();
     void rollback();
 
-    WARN_UNUSED_RETURN Entity undoAddEntity(Entity::Id id, Entity::Type type, const char *name, const char *title);
+    WARN_UNUSED_RETURN Entity undoAddEntity(Entity::Id id, Entity::Type type, const ::EFC::String &name, const ::EFC::String &title);
     WARN_UNUSED_RETURN bool undoRemoveEntity(const Entity &entity);
-    WARN_UNUSED_RETURN bool undoAddProperty(const Entity &entity, const Entity &property, const char *name);
-    WARN_UNUSED_RETURN bool undoRenameProperty(const Entity &entity, const Entity &property, const char *name);
+    WARN_UNUSED_RETURN bool undoAddProperty(const Entity &entity, const Entity &property, const ::EFC::String &name);
+    WARN_UNUSED_RETURN bool undoRenameProperty(const Entity &entity, const Entity &property, const ::EFC::String &name);
     WARN_UNUSED_RETURN bool undoRemoveProperty(const Entity &entity, const Entity &property);
     WARN_UNUSED_RETURN bool undoAddValue(const EntityValue &entityValue, const EntityValue &propertyValue);
     WARN_UNUSED_RETURN bool undoAddValue(const EntityValue &entityValue, const EntityValue::List &propertyValues);

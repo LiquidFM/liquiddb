@@ -35,6 +35,7 @@
 
 #include <efc/List>
 #include <efc/ScopedPointer>
+#include <brolly/assert.h>
 
 
 namespace LiquidDb {
@@ -84,11 +85,11 @@ public:
     const Entity &entity() const { return m_entity; }
     const EntityTable &entityTable() const { return m_entityTable; }
 
-    bool join(Select &query)
+    bool setupQuery(Select &query)
     {
-        for (Entity::Properties::const_iterator i = m_entity.properties().begin(), end = m_entity.properties().end(); i != end; ++i)
+        for (auto i : m_entity.properties())
         {
-            PropertyHolder property(new (std::nothrow) Property(m_entityTable, m_entity, (*i).second.entity));
+            PropertyHolder property(new (std::nothrow) Property(m_entityTable, m_entity, i.second.entity));
 
             if (UNLIKELY(property == NULL))
                 return false;
@@ -119,8 +120,12 @@ public:
         m_beforeFirst(true),
         m_dataSet(std::move(dataSet)),
         m_context(std::move(context))
-    {}
+    {
+        ASSERT(m_context != NULL);
+        ASSERT(m_dataSet.isValid());
+    }
 
+    bool isValid() const { return m_dataSet.isValid(); }
     const Entity &entity() const { return m_context->entity(); }
 
     EntityValue next()
@@ -146,6 +151,12 @@ public:
 
     bool eof() const { return m_afterLast; }
     bool bof() const { return m_beforeFirst; }
+    void refresh()
+    {
+        m_dataSet.reset();
+        m_afterLast = m_dataSet.lastError() != 0;
+        m_beforeFirst = !m_afterLast;
+    }
     void close() { m_afterLast = true; }
 
 private:
