@@ -94,9 +94,12 @@ bool Storage::transaction()
 {
     if (m_database.transaction())
         if (UNLIKELY(m_undoStack.transaction() == false))
+        {
             m_database.rollback();
+            return false;
+        }
 
-    return false;
+    return true;
 }
 
 bool Storage::commit()
