@@ -71,6 +71,9 @@ public:
 	void rollback();
 	void close();
 
+    int version() const;
+    void setVersion(int value);
+
 private:
     bool performQuery(const Query &query);
 

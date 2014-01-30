@@ -394,6 +394,49 @@ void Database::close()
 	m_db = NULL;
 }
 
+int Database::version() const
+{
+    ASSERT(m_db != NULL);
+    static const char buffer[] = "PRAGMA user_version";
+    sqlite3_stmt *statement;
+    int res = 0;
+
+    if (sqlite3_prepare_v2(m_db, buffer, sizeof(buffer) - 1, &statement, NULL) == SQLITE_OK)
+    {
+        sqlite3_step(statement);
+        res = sqlite3_column_int(statement, 0);
+        m_error = sqlite3_finalize(statement);
+    }
+    else
+    {
+        m_error = sqlite3_errcode(m_db);
+    }
+
+    return res;
+}
+
+void Database::setVersion(int value)
+{
+    ASSERT(m_db != NULL);
+    char buffer[BufferSize];
+    int res = snprintf(buffer, BufferSize, "PRAGMA user_version = %d", value);
+
+    if (LIKELY(res > 0))
+    {
+        sqlite3_stmt *statement;
+
+        if (sqlite3_prepare_v2(m_db, buffer, res, &statement, NULL) == SQLITE_OK)
+        {
+            sqlite3_step(statement);
+            m_error = sqlite3_finalize(statement);
+        }
+        else
+        {
+            m_error = sqlite3_errcode(m_db);
+        }
+    }
+}
+
 bool Database::performQuery(const Query &query)
 {
     ASSERT(m_db != NULL);
