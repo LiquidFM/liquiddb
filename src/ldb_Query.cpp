@@ -180,7 +180,23 @@ int Insert::build(char *buffer, size_t size) const
 	{
 		int len = res;
 
-		if (!m_values.empty())
+		if (m_values.empty())
+		{
+            res = snprintf(buffer + len, size - len, " DEFAULT VALUES");
+
+            if (LIKELY(res > 0))
+                len += res;
+            else
+                return -1;
+
+            res = Query::build(buffer + len, size - len);
+
+            if (LIKELY(res >= 0))
+                len += res;
+            else
+                return -1;
+		}
+		else
 		{
 			Values::const_iterator i = m_values.begin();
 			Values::const_iterator end = m_values.end();
