@@ -631,8 +631,9 @@ bool Storage::removeOverlappingIds(const Entity &entity, const Entity &property,
                 Select query(propertyTable);
                 query.select(propertyTable, PropertyTable::PropertyValueId);
 
+                Entity::IdsList tmp(setToList(ids));
                 Field propertyValueId(propertyTable, PropertyTable::PropertyValueId);
-                SetConstraint constraint(propertyValueId, Constraint::In, setToList(ids));
+                SetConstraint constraint(propertyValueId, Constraint::In, tmp);
 
                 query.where(constraint);
 
@@ -662,7 +663,7 @@ bool Storage::removeSelfOverlappingIds(const Entity &entity, const Entity::IdsLi
 {
     if (!propertyIds.empty())
     {
-        PropertyTable propertyTable(entity.id(), property.id());
+        PropertyTable propertyTable(entity, property);
 
         Select query(propertyTable);
         query.select(propertyTable, PropertyTable::PropertyValueId);
@@ -670,8 +671,9 @@ bool Storage::removeSelfOverlappingIds(const Entity &entity, const Entity::IdsLi
         Field entityValueId(propertyTable, PropertyTable::EntityValueId);
         SetConstraint constraint1(entityValueId, Constraint::NotIn, entityIds);
 
+        Entity::IdsList tmp(setToList(propertyIds));
         Field propertyValueId(propertyTable, PropertyTable::PropertyValueId);
-        SetConstraint constraint2(propertyValueId, Constraint::In, setToList(propertyIds));
+        SetConstraint constraint2(propertyValueId, Constraint::In, tmp);
 
         GroupConstraint constraint(GroupConstraint::And);
         constraint.add(constraint1);
@@ -752,7 +754,7 @@ bool Storage::cleanupPropertyValues(const Entity &entity, const Entity::IdsList 
 
     for (Entity::Properties::const_iterator i = entity.properties().begin(), end = entity.properties().end(); i != end; ++i)
     {
-        PropertyTable propertyTable(entity.id(), (*i).second.entity.id());
+        PropertyTable propertyTable(entity, (*i).second.entity);
 
         Select query(propertyTable);
         query.select(propertyTable, PropertyTable::PropertyValueId);

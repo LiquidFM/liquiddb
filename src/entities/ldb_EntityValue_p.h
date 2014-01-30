@@ -26,6 +26,9 @@
 #define LDB_ENTITYVALUE_P_H_
 
 #include "ldb_EntityValue.h"
+#include "ldb_EntityTitle.h"
+
+#include <platform/utils.h>
 
 
 namespace LiquidDb {
@@ -75,43 +78,91 @@ public:
 
     virtual ::EFC::Variant value() const
     {
-//        if (m_value.isValid())
+        enum { BufferSize = 1024 };
+        static const char nullString[] = "<NULL>";
+
+        if (m_value.isValid())
             return m_value;
-//        else
-//        {
-//            QString val;
-//            const EntityTitle &format = entity()->shortFormat();
-//
-//            for (EntityTitle::size_type i = 0, size = format.size(); i < size; ++i)
-//                switch (format.at(i).type())
-//                {
-//                    case EntityTitle::Token::Text:
-//                    {
-//                        val.append(format.at(i).string());
-//                        break;
-//                    }
-//                    case EntityTitle::Token::Property:
-//                    {
-//                        Entity::size_type index = entity()->indexOf(format.at(i).string());
-//
-//                        if (index == Entity::InvalidIndex)
-//                            val.append(tr("Property \"%1\" does not exists").arg(format.at(i).string()));
-//                        else
-//                        {
-//                            const InternalList values = m_items.value(entity()->at(index).entity);
-//
-//                            if (values.isEmpty())
-//                                val.append(tr("Property \"%1\" is empty").arg(format.at(i).string()));
-//                            else
-//                                val.append(values.at(0)->value().toString());
-//                        }
-//
-//                        break;
-//                    }
-//                }
-//
-//            return m_value = val;
-//        }
+        else
+        {
+            bool ok;
+            ::EFC::String val;
+
+            for (auto i : entity().title())
+                switch (i.type())
+                {
+                    case EntityTitle::Token::Text:
+                    {
+                        val += i.string();
+                        break;
+                    }
+
+                    case EntityTitle::Token::Property:
+                    {
+                        ok = false;
+
+                        for (auto q : entity().properties())
+                            if (q.second.name == i.string())
+                            {
+                                Map::const_iterator values = m_items.find(q.second.entity);
+
+                                if (values == m_items.end() || (*values).second.empty())
+                                    val += nullString;
+                                else
+                                {
+                                    char buffer[BufferSize];
+                                    int res = 0;
+
+                                    ::EFC::Variant value = (*(*values).second.begin()).second.value();
+
+                                    switch (value.type())
+                                    {
+                                        case ::EFC::Variant::UINT8:
+                                        case ::EFC::Variant::INT8:
+                                        case ::EFC::Variant::UINT16:
+                                        case ::EFC::Variant::INT16:
+                                        case ::EFC::Variant::UINT32:
+                                        case ::EFC::Variant::INT32:
+                                        case ::EFC::Variant::UINT64:
+                                        case ::EFC::Variant::INT64:
+                                        case ::EFC::Variant::BOOL:
+                                        case ::EFC::Variant::CHAR:
+                                            res = snprintf(buffer, BufferSize, "%" PRId64, value.asInt64());
+                                            break;
+
+                                        case ::EFC::Variant::FLOAT:
+                                            res = snprintf(buffer, BufferSize, "%f", value.asFloat());
+                                            break;
+
+                                        case ::EFC::Variant::DOUBLE:
+                                            res = snprintf(buffer, BufferSize, "%f", value.asFloat());
+                                            break;
+
+                                        case ::EFC::Variant::STRING:
+                                        case ::EFC::Variant::BINARY:
+                                            res = snprintf(buffer, BufferSize, "%s", value.asString());
+                                            break;
+                                    }
+
+                                    if (LIKELY(res > 0))
+                                        val += buffer;
+                                    else
+                                        val += nullString;
+                                }
+
+                                ok = true;
+                                break;
+                            }
+
+                        if (!ok)
+                            val += nullString;
+
+                        break;
+                    }
+                }
+
+            return m_value = val.c_str();
+        }
     }
 
     void resetValue()

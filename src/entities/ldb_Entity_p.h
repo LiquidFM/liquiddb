@@ -112,9 +112,9 @@ public:
     Id id() const { return m_id; }
     Type type() const { return m_type; }
     const ::EFC::String &name() const { return m_name; }
+    const EntityTitle &title() const { return m_title; }
     const Parents &parents() const { return m_parents; }
     const Properties &properties() const { return m_properties; }
-    const EntityTitle &title() const { return m_title; }
 
 public:
     void addParent(const Entity &parent) { m_parents.insert(Parents::value_type(parent.id(), parent)); }

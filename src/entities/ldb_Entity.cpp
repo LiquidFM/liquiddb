@@ -21,7 +21,6 @@
  * You should have received a copy of the GNU General Public License
  * along with liquiddb. If not, see <http://www.gnu.org/licenses/>.
  */
-#include "ldb_Entity.h"
 #include "ldb_Entity_p.h"
 
 
@@ -50,6 +49,11 @@ Entity::Type Entity::type() const
 const ::EFC::String &Entity::name() const
 {
     return m_implementation->name();
+}
+
+const EntityTitle &Entity::title() const
+{
+    return m_implementation->title();
 }
 
 const Entity::Parents &Entity::parents() const

@@ -35,6 +35,9 @@
 
 namespace LiquidDb {
 
+class EntityTitle;
+
+
 class Entity
 {
 public:
@@ -73,6 +76,7 @@ public:
     Id id() const;
     Type type() const;
     const ::EFC::String &name() const;
+    const EntityTitle &title() const;
     const Parents &parents() const;
     const Properties &properties() const;
 

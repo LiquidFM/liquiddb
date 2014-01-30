@@ -66,7 +66,7 @@ SetConstraint::SetConstraint(const Field &field, RangeOperator op, const Entity:
 
 int SetConstraint::build(char *buffer, size_t size) const
 {
-    int len = snprintf(buffer, size, "(%s.%s %s (", m_field.table->name(), m_field.column->name, operatorToString(In));
+    int len = snprintf(buffer, size, "(%s.%s %s (", m_field.table->name(), m_field.column->name, operatorToString(m_op));
 
     if (LIKELY(len > 0))
     {
