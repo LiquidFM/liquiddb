@@ -76,6 +76,7 @@ private:
 
 private:
 	sqlite3 *m_db;
+	int m_transaction;
 	mutable int m_error;
 };
 

@@ -24,12 +24,14 @@ namespace LiquidDb {
 
 Database::Database() :
 	m_db(NULL),
+    m_transaction(0),
 	m_error(SQLITE_OK)
 {}
 
 #if PLATFORM_COMPILER_SUPPORTS(MOVE_SEMANTIC)
 Database::Database(Database &&other) :
 	m_db(other.m_db),
+    m_transaction(0),
 	m_error(other.m_error)
 {
 	other.m_db = NULL;
@@ -40,6 +42,7 @@ Database &Database::operator=(Database &&other)
 {
 	sqlite3_close(m_db);
 	m_db = other.m_db;
+    m_transaction = other.m_transaction;
 	m_error = other.m_error;
 	other.m_db = NULL;
 	other.m_error = SQLITE_OK;
@@ -272,17 +275,38 @@ bool Database::transaction()
 	sqlite3_stmt *statement;
 	bool res = false;
 
-	if (sqlite3_prepare_v2(m_db, "BEGIN TRANSACTION", sizeof("BEGIN TRANSACTION") - 1, &statement, NULL) == SQLITE_OK)
+	if (m_transaction)
 	{
-		res = (sqlite3_step(statement) == SQLITE_DONE);
-		m_error = sqlite3_finalize(statement);
+	    enum { BUfferSize = 32 };
+	    char buffer[BUfferSize];
+	    int len = snprintf(buffer, BUfferSize, "SAVEPOINT '%d'", m_transaction + 1);
+
+	    if (LIKELY(len > 0))
+            if (sqlite3_prepare_v2(m_db, buffer, len, &statement, NULL) == SQLITE_OK)
+            {
+                res = (sqlite3_step(statement) == SQLITE_DONE);
+                m_error = sqlite3_finalize(statement);
+            }
+            else
+            {
+                m_error = sqlite3_errcode(m_db);
+            }
 	}
 	else
-	{
-		m_error = sqlite3_errcode(m_db);
-	}
+        if (sqlite3_prepare_v2(m_db, "BEGIN TRANSACTION", sizeof("BEGIN TRANSACTION") - 1, &statement, NULL) == SQLITE_OK)
+        {
+            res = (sqlite3_step(statement) == SQLITE_DONE);
+            m_error = sqlite3_finalize(statement);
+        }
+        else
+        {
+            m_error = sqlite3_errcode(m_db);
+        }
 
-	return res;
+    if (res)
+        ++m_transaction;
+
+    return res;
 }
 
 bool Database::commit()
@@ -291,33 +315,76 @@ bool Database::commit()
 	sqlite3_stmt *statement;
 	bool res = false;
 
-	if (sqlite3_prepare_v2(m_db, "COMMIT", sizeof("COMMIT") - 1, &statement, NULL) == SQLITE_OK)
-	{
-		res = (sqlite3_step(statement) == SQLITE_DONE);
-		m_error = sqlite3_finalize(statement);
-	}
-	else
-	{
-		m_error = sqlite3_errcode(m_db);
-	}
+    if (m_transaction > 1)
+    {
+        enum { BUfferSize = 32 };
+        char buffer[BUfferSize];
+        int len = snprintf(buffer, BUfferSize, "RELEASE '%d'", m_transaction);
 
-	return res;
+        if (LIKELY(len > 0))
+            if (sqlite3_prepare_v2(m_db, buffer, len, &statement, NULL) == SQLITE_OK)
+            {
+                res = (sqlite3_step(statement) == SQLITE_DONE);
+                m_error = sqlite3_finalize(statement);
+            }
+            else
+            {
+                m_error = sqlite3_errcode(m_db);
+            }
+    }
+    else
+        if (sqlite3_prepare_v2(m_db, "COMMIT", sizeof("COMMIT") - 1, &statement, NULL) == SQLITE_OK)
+        {
+            res = (sqlite3_step(statement) == SQLITE_DONE);
+            m_error = sqlite3_finalize(statement);
+        }
+        else
+        {
+            m_error = sqlite3_errcode(m_db);
+        }
+
+    if (res)
+        --m_transaction;
+
+    return res;
 }
 
 void Database::rollback()
 {
 	ASSERT(m_db != NULL);
 	sqlite3_stmt *statement;
+    bool res = false;
 
-	if (sqlite3_prepare_v2(m_db, "ROLLBACK", sizeof("ROLLBACK") - 1, &statement, NULL) == SQLITE_OK)
-	{
-		sqlite3_step(statement);
-		m_error = sqlite3_finalize(statement);
-	}
-	else
-	{
-		m_error = sqlite3_errcode(m_db);
-	}
+    if (m_transaction > 1)
+    {
+        enum { BUfferSize = 32 };
+        char buffer[BUfferSize];
+        int len = snprintf(buffer, BUfferSize, "ROLLBACK TO '%d'", m_transaction);
+
+        if (LIKELY(len > 0))
+            if (sqlite3_prepare_v2(m_db, buffer, len, &statement, NULL) == SQLITE_OK)
+            {
+                res = (sqlite3_step(statement) == SQLITE_DONE);
+                m_error = sqlite3_finalize(statement);
+            }
+            else
+            {
+                m_error = sqlite3_errcode(m_db);
+            }
+    }
+    else
+        if (sqlite3_prepare_v2(m_db, "ROLLBACK", sizeof("ROLLBACK") - 1, &statement, NULL) == SQLITE_OK)
+        {
+            res = (sqlite3_step(statement) == SQLITE_DONE);
+            m_error = sqlite3_finalize(statement);
+        }
+        else
+        {
+            m_error = sqlite3_errcode(m_db);
+        }
+
+    if (res)
+        --m_transaction;
 }
 
 void Database::close()

@@ -92,7 +92,9 @@ Storage::Storage(const ::EFC::String &fileName, bool create) :
 
 bool Storage::transaction()
 {
-    if (m_database.transaction())
+    if (!m_database.transaction())
+        return false;
+    else
         if (UNLIKELY(m_undoStack.transaction() == false))
         {
             m_database.rollback();

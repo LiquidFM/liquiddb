@@ -43,12 +43,23 @@ bool UndoStack::transaction()
 
 void UndoStack::commit()
 {
+    if (m_stack.size() > 1)
+    {
+        List &to = *(--(--m_stack.end()));
+        to.splice(to.end(), std::move(m_stack.back()));
+    }
 
+    m_stack.pop_back();
 }
 
 void UndoStack::rollback()
 {
+    List &list = m_stack.back();
 
+    for (auto i = list.begin(), end = list.end(); i != end; i = list.erase(i))
+        (*i)->undo(m_entities);
+
+    m_stack.pop_back();
 }
 
 Entity UndoStack::undoAddEntity(Entity::Id id, Entity::Type type, const ::EFC::String &name, const ::EFC::String &title)
