@@ -52,11 +52,11 @@ public:
     virtual const char *name() const;
     virtual const Column *primaryKeyColumn() const;
 
-    virtual unsigned char columnsCount() const;
-    virtual const Column *column(unsigned char i) const;
+    virtual Column::Id columnsCount() const;
+    virtual const Column *column(Column::Id i) const;
 
-    virtual unsigned char indexesCount() const;
-    virtual const Index *index(unsigned char i) const;
+    virtual Column::Id indexesCount() const;
+    virtual const Index *index(Column::Id i) const;
 
 private:
     Column m_columns[ColumnsCount];

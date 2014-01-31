@@ -97,11 +97,11 @@ Select::~Select()
 
 void Select::select(const Table &table)
 {
-	for (unsigned char i = 0, size = table.columnsCount(); i < size; ++i)
+	for (Table::Column::Id i = 0, size = table.columnsCount(); i < size; ++i)
 		m_fields.push_back({ table, i });
 }
 
-void Select::select(const Table &table, unsigned char column)
+void Select::select(const Table &table, Table::Column::Id column)
 {
 	m_fields.push_back({ table, column });
 }

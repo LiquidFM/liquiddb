@@ -50,22 +50,22 @@ const Table::Column *EntitiesTable::primaryKeyColumn() const
     return &m_columns[Id];
 }
 
-unsigned char EntitiesTable::columnsCount() const
+EntitiesTable::Column::Id EntitiesTable::columnsCount() const
 {
     return ColumnsCount;
 }
 
-const Table::Column *EntitiesTable::column(unsigned char i) const
+const Table::Column *EntitiesTable::column(Column::Id i) const
 {
     return &m_columns[i];
 }
 
-unsigned char EntitiesTable::indexesCount() const
+EntitiesTable::Column::Id EntitiesTable::indexesCount() const
 {
     return 0;
 }
 
-const Table::Index *EntitiesTable::index(unsigned char i) const
+const Table::Index *EntitiesTable::index(Column::Id i) const
 {
     return NULL;
 }

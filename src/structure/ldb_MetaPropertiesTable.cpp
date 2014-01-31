@@ -29,9 +29,9 @@ namespace LiquidDb {
 
 MetaPropertiesTable::MetaPropertiesTable() :
     m_columns({
-        { Column::BigInt, "ID"                 },
-        { Column::BigInt, "ENTITY_ID"          },
-        { Column::Blob,   "VALUE"              }
+        { Column::BigInt, "ID"        },
+        { Column::BigInt, "ENTITY_ID" },
+        { Column::Blob,   "VALUE"     }
     })
 {}
 
@@ -48,22 +48,22 @@ const Table::Column *MetaPropertiesTable::primaryKeyColumn() const
     return &m_columns[Id];
 }
 
-unsigned char MetaPropertiesTable::columnsCount() const
+MetaPropertiesTable::Column::Id MetaPropertiesTable::columnsCount() const
 {
     return ColumnsCount;
 }
 
-const Table::Column *MetaPropertiesTable::column(unsigned char i) const
+const Table::Column *MetaPropertiesTable::column(Column::Id i) const
 {
     return &m_columns[i];
 }
 
-unsigned char MetaPropertiesTable::indexesCount() const
+MetaPropertiesTable::Column::Id MetaPropertiesTable::indexesCount() const
 {
     return 0;
 }
 
-const Table::Index *MetaPropertiesTable::index(unsigned char i) const
+const Table::Index *MetaPropertiesTable::index(Column::Id i) const
 {
     return NULL;
 }

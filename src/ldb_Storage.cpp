@@ -78,7 +78,9 @@ Storage::Storage(const ::EFC::String &fileName, bool create) :
                 if (m_database.create(propertiesTable))
                 {
                     MetaPropertiesTable metaPropertiesTable;
+
                     m_database.create(metaPropertiesTable);
+                    m_database.setVersion(1);
                 }
             }
         }

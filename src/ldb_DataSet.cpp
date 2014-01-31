@@ -80,23 +80,23 @@ bool DataSet::initialize(sqlite3_stmt *statement, const Query::Fields &fields)
 	return true;
 }
 
-bool DataSet::columnIsNull(unsigned char column) const
+bool DataSet::columnIsNull(Table::Column::Id column) const
 {
     return sqlite3_column_type(m_statement, column) == SQLITE_NULL;
 }
 
-void DataSet::columnValue(unsigned char column, Table::Column::Type type, void *value) const
+void DataSet::columnValue(Table::Column::Id column, Table::Column::Type type, void *value) const
 {
     size_t size;
     columnValueInternal(column, type, &value, size);
 }
 
-void DataSet::columnValue(unsigned char column, Table::Column::Type type, const void **value, size_t &size) const
+void DataSet::columnValue(Table::Column::Id column, Table::Column::Type type, const void **value, size_t &size) const
 {
     columnValueInternal(column, type, const_cast<void **>(value), size);
 }
 
-void DataSet::columnValueInternal(unsigned char column, Table::Column::Type type, void **value, size_t &size) const
+void DataSet::columnValueInternal(Table::Column::Id column, Table::Column::Type type, void **value, size_t &size) const
 {
 	ASSERT(value != NULL);
 	size = 0;

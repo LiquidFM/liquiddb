@@ -98,22 +98,22 @@ const Table::Column *EntityTable::primaryKeyColumn() const
     return &m_columns[Id];
 }
 
-unsigned char EntityTable::columnsCount() const
+EntityTable::Column::Id EntityTable::columnsCount() const
 {
     return m_type == Entity::Composite ? ColumnsCount - 1 : ColumnsCount;
 }
 
-const Table::Column *EntityTable::column(unsigned char i) const
+const Table::Column *EntityTable::column(Column::Id i) const
 {
     return &m_columns[i];
 }
 
-unsigned char EntityTable::indexesCount() const
+EntityTable::Column::Id EntityTable::indexesCount() const
 {
     return 0;
 }
 
-const Table::Index *EntityTable::index(unsigned char i) const
+const Table::Index *EntityTable::index(Column::Id i) const
 {
     return NULL;
 }

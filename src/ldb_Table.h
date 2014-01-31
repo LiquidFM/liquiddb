@@ -54,6 +54,8 @@ public:
 			Blob
 		};
 
+		typedef unsigned char Id;
+
 	public:
 		Column() :
 			type(Int),
@@ -107,11 +109,11 @@ public:
 	virtual const char *name() const = 0;
 	virtual const Column *primaryKeyColumn() const = 0;
 
-	virtual unsigned char columnsCount() const = 0;
-	virtual const Column *column(unsigned char i) const = 0;
+	virtual Column::Id columnsCount() const = 0;
+	virtual const Column *column(Column::Id i) const = 0;
 
-	virtual unsigned char indexesCount() const = 0;
-	virtual const Index *index(unsigned char i) const = 0;
+	virtual Column::Id indexesCount() const = 0;
+	virtual const Index *index(Column::Id i) const = 0;
 };
 
 }

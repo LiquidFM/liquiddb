@@ -34,7 +34,7 @@ public:
 		column(NULL)
 	{}
 
-	Field(const Table &table, unsigned char column) :
+	Field(const Table &table, Table::Column::Id column) :
 		table(&table),
 		column(table.column(column))
 	{}

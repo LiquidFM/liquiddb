@@ -48,22 +48,22 @@ const Table::Column *PropertiesTable::primaryKeyColumn() const
     return &m_columns[Id];
 }
 
-unsigned char PropertiesTable::columnsCount() const
+PropertiesTable::Column::Id PropertiesTable::columnsCount() const
 {
     return ColumnsCount;
 }
 
-const Table::Column *PropertiesTable::column(unsigned char i) const
+const Table::Column *PropertiesTable::column(Column::Id i) const
 {
     return &m_columns[i];
 }
 
-unsigned char PropertiesTable::indexesCount() const
+PropertiesTable::Column::Id PropertiesTable::indexesCount() const
 {
     return 0;
 }
 
-const Table::Index *PropertiesTable::index(unsigned char i) const
+const Table::Index *PropertiesTable::index(Column::Id i) const
 {
     return NULL;
 }

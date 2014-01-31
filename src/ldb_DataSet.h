@@ -48,7 +48,7 @@ public:
                 void value(void *value) const { dataSet->columnValue(pos, column()->type, value); }
                 void value(const void **value, size_t &size) const { dataSet->columnValue(pos, column()->type, value, size); }
 
-                unsigned char pos;
+                Table::Column::Id pos;
                 const DataSet *dataSet;
                 Query::Fields::const_iterator iterator;
             };
@@ -116,10 +116,10 @@ protected:
 
 private:
 	friend class Columns::const_iterator::value_type;
-    bool columnIsNull(unsigned char column) const;
-    void columnValue(unsigned char column, Table::Column::Type type, void *value) const;
-    void columnValue(unsigned char column, Table::Column::Type type, const void **value, size_t &size) const;
-	void columnValueInternal(unsigned char column, Table::Column::Type type, void **value, size_t &size) const;
+    bool columnIsNull(Table::Column::Id column) const;
+    void columnValue(Table::Column::Id column, Table::Column::Type type, void *value) const;
+    void columnValue(Table::Column::Id column, Table::Column::Type type, const void **value, size_t &size) const;
+	void columnValueInternal(Table::Column::Id column, Table::Column::Type type, void **value, size_t &size) const;
 
 private:
 	int m_error;
