@@ -99,7 +99,7 @@ namespace {
 				return snprintf(buffer, size, "%" PRId64, *static_cast<const int64_t *>(value));
 
 			case Table::Column::Text:
-				return snprintf(buffer, size, "'%s'", static_cast<const char *>(value));
+				return snprintf(buffer, size, "'%s'", *reinterpret_cast<const char * const *>(value));
 
 			case Table::Column::Real:
 			case Table::Column::Double:
@@ -124,17 +124,18 @@ namespace {
 				{
 					size_t i;
 					size_t j;
+					const char *val = *reinterpret_cast<const char * const *>(value);
 
 					for (i = 0, j = 0; i < valueSize; ++i, j += 2)
 					{
-						unsigned char token = (static_cast<const char *>(value)[i] >> (CHAR_BIT / 2)) & 0x0F;
+						unsigned char token = (val[i] >> (CHAR_BIT / 2)) & 0x0F;
 
 						if (token <= 9)
 							string.get()[j] = '0' + token;
 						else
 							string.get()[j] = token + 'A' - 10;
 
-						token = static_cast<const char *>(value)[i] & 0x0F;
+						token = val[i] & 0x0F;
 
 						if (token <= 9)
 							string.get()[j + 1] = '0' + token;

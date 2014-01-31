@@ -25,8 +25,13 @@
 #include "structure/ldb_PropertiesTable.h"
 #include "entities/ldb_Entity.h"
 
+#include <brolly/assert.h>
+
 
 namespace LiquidDb {
+
+static size_t zero;
+
 
 Query::Query()
 {}
@@ -162,14 +167,24 @@ Insert::Insert(const Table &into) :
 Insert::~Insert()
 {}
 
-void Insert::insert(const Table::Column *column, const void *value)
+void Insert::insert(Table::Column::Id column, const char *value)
 {
-	m_values.push_back({ column, value, 0 });
+    ASSERT(m_into->column(column)->type == Table::Column::Text);
+    m_values.push_back({ m_into->column(column), &value, &zero });
 }
 
-void Insert::insert(const Table::Column *column, const void *value, size_t size)
+void Insert::insert(Table::Column::Id column, const void *value)
 {
-	m_values.push_back({ column, value, size });
+    ASSERT(m_into->column(column)->type != Table::Column::Text);
+    ASSERT(m_into->column(column)->type != Table::Column::Blob);
+	m_values.push_back({ m_into->column(column), value, &zero });
+}
+
+void Insert::insert(Table::Column::Id column, const void **value, size_t &size)
+{
+    ASSERT(m_into->column(column)->type == Table::Column::Text ||
+           m_into->column(column)->type == Table::Column::Blob);
+	m_values.push_back({ m_into->column(column), value, &size });
 }
 
 int Insert::build(char *buffer, size_t size) const
@@ -226,7 +241,7 @@ int Insert::build(char *buffer, size_t size) const
 				return -1;
 
 			i = m_values.begin();
-			res = printValue(buffer + len, size - len, (*i).column, (*i).value, (*i).size);
+			res = printValue(buffer + len, size - len, (*i).column, (*i).value, *(*i).size);
 
 			if (LIKELY(res > 0))
 				len += res;
@@ -242,7 +257,7 @@ int Insert::build(char *buffer, size_t size) const
 				else
 					return -1;
 
-				res = printValue(buffer + len, size - len, (*i).column, (*i).value, (*i).size);
+				res = printValue(buffer + len, size - len, (*i).column, (*i).value, *(*i).size);
 
 				if (LIKELY(len > 0))
 					len += res;
@@ -279,14 +294,14 @@ Update::Update(const Table &table) :
 Update::~Update()
 {}
 
-void Update::update(const Table::Column *column, const void *value)
+void Update::update(Table::Column::Id column, const void *value)
 {
-	m_values.push_back({ column, value, 0 });
+	m_values.push_back({ m_table->column(column), value, &zero });
 }
 
-void Update::update(const Table::Column *column, const void *value, size_t size)
+void Update::update(Table::Column::Id column, const void **value, size_t &size)
 {
-	m_values.push_back({ column, value, size });
+	m_values.push_back({ m_table->column(column), value, &size });
 }
 
 int Update::build(char *buffer, size_t size) const
@@ -309,7 +324,7 @@ int Update::build(char *buffer, size_t size) const
 			else
 				return -1;
 
-			res = printValue(buffer + len, size - len, (*i).column, (*i).value, (*i).size);
+			res = printValue(buffer + len, size - len, (*i).column, (*i).value, *(*i).size);
 
 			if (LIKELY(res > 0))
 				len += res;
@@ -325,7 +340,7 @@ int Update::build(char *buffer, size_t size) const
 				else
 					return -1;
 
-				res = printValue(buffer + len, size - len, (*i).column, (*i).value, (*i).size);
+				res = printValue(buffer + len, size - len, (*i).column, (*i).value, *(*i).size);
 
 				if (LIKELY(res > 0))
 					len += res;

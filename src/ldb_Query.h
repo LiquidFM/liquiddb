@@ -47,7 +47,7 @@ public:
 	{
 		const Table::Column *column;
 		const void *value;
-		size_t size;
+		size_t *size;
 	};
 
     typedef ::EFC::StaticArray<Value, MaxFields> Values;
@@ -93,8 +93,9 @@ public:
 	Insert(const Table &into);
 	virtual ~Insert();
 
-	void insert(const Table::Column *column, const void *value);
-	void insert(const Table::Column *column, const void *value, size_t size);
+    void insert(Table::Column::Id column, const char *value);
+	void insert(Table::Column::Id column, const void *value);
+	void insert(Table::Column::Id column, const void **value, size_t &size);
 	virtual int build(char *buffer, size_t size) const;
 
 private:
@@ -109,8 +110,8 @@ public:
 	Update(const Table &table);
 	virtual ~Update();
 
-	void update(const Table::Column *column, const void *value);
-	void update(const Table::Column *column, const void *value, size_t size);
+	void update(Table::Column::Id column, const void *value);
+	void update(Table::Column::Id column, const void **value, size_t &size);
 	virtual int build(char *buffer, size_t size) const;
 
 private:

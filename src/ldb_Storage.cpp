@@ -169,9 +169,9 @@ Entity Storage::createEntity(Entity::Type type, const ::EFC::String &name, const
     EntitiesTable entitiesTable;
     Insert query(entitiesTable);
 
-    query.insert(entitiesTable.column(EntitiesTable::Type), &type);
-    query.insert(entitiesTable.column(EntitiesTable::Name), name.c_str());
-    query.insert(entitiesTable.column(EntitiesTable::Title), title.c_str());
+    query.insert(EntitiesTable::Type, &type);
+    query.insert(EntitiesTable::Name, name.c_str());
+    query.insert(EntitiesTable::Title, title.c_str());
 
     if (m_database.perform(query, id))
     {
@@ -246,9 +246,9 @@ bool Storage::addProperty(const Entity &entity, const Entity &property, const ::
         PropertiesTable propertiesTable;
         Insert query(propertiesTable);
 
-        query.insert(propertiesTable.column(PropertiesTable::EntityId), &entityId);
-        query.insert(propertiesTable.column(PropertiesTable::PropertyId), &propertyId);
-        query.insert(propertiesTable.column(PropertiesTable::Name), name.c_str());
+        query.insert(PropertiesTable::EntityId, &entityId);
+        query.insert(PropertiesTable::PropertyId, &propertyId);
+        query.insert(PropertiesTable::Name, name.c_str());
 
         if (m_database.perform(query, id))
         {
@@ -272,7 +272,7 @@ bool Storage::renameProperty(const Entity &entity, const Entity &property, const
     PropertiesTable propertiesTable;
     Update query(propertiesTable);
 
-    query.update(propertiesTable.column(PropertiesTable::Name), name.c_str());
+    query.update(PropertiesTable::Name, name.c_str());
 
     Field entityIdField(propertiesTable, PropertiesTable::EntityId);
     ConstConstraint constraint1(entityIdField, Constraint::Equal, &entityId);
@@ -353,8 +353,8 @@ bool Storage::addValue(const EntityValue &entityValue, const EntityValue &proper
         PropertyTable propertyTable(entityValue.entity(), propertyValue.entity());
         Insert query(propertyTable);
 
-        query.insert(propertyTable.column(PropertyTable::EntityValueId), &entityId);
-        query.insert(propertyTable.column(PropertyTable::PropertyValueId), &propertyId);
+        query.insert(PropertyTable::EntityValueId, &entityId);
+        query.insert(PropertyTable::PropertyValueId, &propertyId);
 
         if (m_database.perform(query, id))
             return m_undoStack.undoAddValue(entityValue, propertyValue);
@@ -392,8 +392,8 @@ bool Storage::addValue(const EntityValue &entityValue, const EntityValue::List &
 
         propertyId = i->id();
 
-        query.insert(propertyTable.column(PropertyTable::EntityValueId), &entityId);
-        query.insert(propertyTable.column(PropertyTable::PropertyValueId), &propertyId);
+        query.insert(PropertyTable::EntityValueId, &entityId);
+        query.insert(PropertyTable::PropertyValueId, &propertyId);
 
         if (m_database.perform(query, id))
             EntityValue::addValue(entityValue, *i);
@@ -429,7 +429,7 @@ EntityValue Storage::addValue(const Entity &entity, const ::EFC::Variant &value)
     RawValue val = {};
     RawValue::set(val, entity, value);
 
-    query.insert(entityTable.column(EntityTable::Value), &val);
+    query.insert(EntityTable::Value, &val);
 
    if (m_database.perform(query, id))
        return EntityValue::createValue(entity, id, value);
@@ -447,7 +447,7 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
     RawValue val = {};
     RawValue::set(val, value.entity(), newValue);
 
-    query.update(entityTable.column(EntityTable::Value), &val);
+    query.update(EntityTable::Value, &val);
 
     if (m_database.perform(query))
         return m_undoStack.undoUpdateValue(value, newValue);
@@ -628,7 +628,7 @@ bool Storage::removeOverlappingIds(const Entity &entity, const Entity &property,
         for (Entity::Parents::const_iterator i = property.parents().begin(), end = property.parents().end(); i != end; ++i)
             if ((*i).second != entity)
             {
-                PropertyTable propertyTable((*i).second.id(), property.id());
+                PropertyTable propertyTable((*i).second, property);
 
                 Select query(propertyTable);
                 query.select(propertyTable, PropertyTable::PropertyValueId);
@@ -707,7 +707,7 @@ bool Storage::cleanupParentsValues(const Entity &entity)
 {
     for (Entity::Parents::const_iterator i = entity.parents().begin(), end = entity.parents().end(); i != end; ++i)
     {
-        PropertyTable propertyTable((*i).second.id(), entity.id());
+        PropertyTable propertyTable((*i).second, entity);
 
         if (!m_database.remove(propertyTable))
             return false;
@@ -720,7 +720,7 @@ bool Storage::cleanupParentsValues(const Entity &entity, const Entity::IdsList &
 {
     for (Entity::Parents::const_iterator i = entity.parents().begin(), end = entity.parents().end(); i != end; ++i)
     {
-        PropertyTable propertyTable((*i).second.id(), entity.id());
+        PropertyTable propertyTable((*i).second, entity);
         Delete query(propertyTable);
 
         Field propertyValueId(propertyTable, PropertyTable::PropertyValueId);
@@ -739,7 +739,7 @@ bool Storage::cleanupPropertyValues(const Entity &entity)
 {
     for (Entity::Properties::const_iterator i = entity.properties().begin(), end = entity.properties().end(); i != end; ++i)
     {
-        PropertyTable propertyTable(entity.id(), (*i).second.entity.id());
+        PropertyTable propertyTable(entity, (*i).second.entity);
 
         if (!m_database.remove(propertyTable))
             return false;
@@ -793,7 +793,7 @@ bool Storage::cleanupPropertyValues(const Entity &entity, const Entity::IdsList 
 bool Storage::cleanupPropertyValues(const Entity &entity, const Entity &property)
 {
     Entity::IdsSet ids;
-    PropertyTable propertyTable(entity.id(), property.id());
+    PropertyTable propertyTable(entity, property);
 
     Select query(propertyTable);
     query.select(propertyTable, PropertyTable::PropertyValueId);
