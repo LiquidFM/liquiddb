@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with QFM. If not, see <http://www.gnu.org/licenses/>.
  */
+
 #ifndef LDB_DATASET_H_
 #define LDB_DATASET_H_
 
@@ -29,6 +30,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 namespace LiquidDb {
 
 class Database;
+class Value;
 
 
 class DataSet
@@ -45,8 +47,7 @@ public:
             {
                 const Table::Column *column() const { return (*iterator).column; }
                 bool isNull() const { return dataSet->columnIsNull(pos); }
-                void value(void *value) const { dataSet->columnValue(pos, column()->type, value); }
-                void value(const void **value, size_t &size) const { dataSet->columnValue(pos, column()->type, value, size); }
+                Value &value(Value &value) const { dataSet->columnValue(pos, column()->type, value); return value; }
 
                 Table::Column::Id pos;
                 const DataSet *dataSet;
@@ -117,9 +118,7 @@ protected:
 private:
 	friend class Columns::const_iterator::value_type;
     bool columnIsNull(Table::Column::Id column) const;
-    void columnValue(Table::Column::Id column, Table::Column::Type type, void *value) const;
-    void columnValue(Table::Column::Id column, Table::Column::Type type, const void **value, size_t &size) const;
-	void columnValueInternal(Table::Column::Id column, Table::Column::Type type, void **value, size_t &size) const;
+	void columnValue(Table::Column::Id column, Table::Column::Type type, Value &value) const;
 
 private:
 	int m_error;

@@ -24,6 +24,7 @@
 #include "ldb_Table.h"
 #include "ldb_Field.h"
 #include "ldb_DataSet.h"
+#include "ldb_Value.h"
 
 #include <brolly/assert.h>
 #include <efc/ScopedPointer>
@@ -78,7 +79,7 @@ namespace {
 		}
 	}
 
-	int printValue(char *buffer, size_t size, const Table::Column *column, const void *value, size_t valueSize)
+	int printValue(char *buffer, size_t size, const Table::Column *column, const Value *value)
 	{
 	    if (value == NULL)
             return snprintf(buffer, size, "NULL");
@@ -87,46 +88,42 @@ namespace {
 		{
 			case Table::Column::Int:
 			case Table::Column::MediumInt:
-				return snprintf(buffer, size, "%d", *static_cast<const int32_t *>(value));
-
 			case Table::Column::TinyInt:
-				return snprintf(buffer, size, "%d", *static_cast<const int8_t *>(value));
+            case Table::Column::Boolean:
+				return snprintf(buffer, size, "%d", value->i32());
 
 			case Table::Column::SmallInt:
-				return snprintf(buffer, size, "%hd", *static_cast<const int16_t *>(value));
+				return snprintf(buffer, size, "%hd", value->i16());
 
 			case Table::Column::BigInt:
-				return snprintf(buffer, size, "%" PRId64, *static_cast<const int64_t *>(value));
+				return snprintf(buffer, size, "%" PRId64, value->i64());
 
 			case Table::Column::Text:
-				return snprintf(buffer, size, "'%s'", *reinterpret_cast<const char * const *>(value));
+				return snprintf(buffer, size, "'%s'", value->str());
 
 			case Table::Column::Real:
 			case Table::Column::Double:
-				return snprintf(buffer, size, "%f", *static_cast<const double *>(value));
+				return snprintf(buffer, size, "%f", value->dbl());
 
 			case Table::Column::Float:
-				return snprintf(buffer, size, "%f", *static_cast<const float *>(value));
+				return snprintf(buffer, size, "%f", value->flt());
 
 			case Table::Column::Date:
 			case Table::Column::Time:
 			case Table::Column::DateTime:
-				return snprintf(buffer, size, "%" PRIu64, *static_cast<const uint64_t *>(value));
-
-			case Table::Column::Boolean:
-				return snprintf(buffer, size, "%i", *static_cast<const bool *>(value));
+				return snprintf(buffer, size, "%" PRIu64, value->u64());
 
 			case Table::Column::Blob:
 			{
-			    ::EFC::ScopedPointer<char> string(new (std::nothrow) char [valueSize * 2 + 1]);
+			    ::EFC::ScopedPointer<char> string(new (std::nothrow) char [value->size() * 2 + 1]);
 
 				if (LIKELY(string != NULL))
 				{
 					size_t i;
 					size_t j;
-					const char *val = *reinterpret_cast<const char * const *>(value);
+					const char *val = value->str();
 
-					for (i = 0, j = 0; i < valueSize; ++i, j += 2)
+					for (i = 0, j = 0; i < value->size(); ++i, j += 2)
 					{
 						unsigned char token = (val[i] >> (CHAR_BIT / 2)) & 0x0F;
 

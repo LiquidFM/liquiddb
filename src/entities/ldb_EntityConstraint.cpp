@@ -54,19 +54,19 @@ int EntityConstraint::build(char *buffer, size_t size) const
         EntityTable entityTable(m_property);
         Field field(entityTable, EntityTable::Value);
 
-        RawValue val;
-        RawValue::set(val, m_property, m_value.value());
+        Value val;
+        set(val, m_property, m_value.value());
 
-        ConstConstraint constraint(field, m_op, &val);
+        ConstConstraint constraint(field, m_op, val);
 
         return constraint.build(buffer, size);
     }
     else
     {
-        Entity::Id id = m_value.id();
+        Value id = m_value.id();
         EntityTable entityTable(m_property);
         Field field(entityTable, EntityTable::Id);
-        ConstConstraint constraint(field, m_op, &id);
+        ConstConstraint constraint(field, m_op, id);
 
         return constraint.build(buffer, size);
     }

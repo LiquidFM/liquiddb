@@ -23,10 +23,12 @@
 #include <liquiddb/Field>
 #include <liquiddb/Link>
 #include <liquiddb/Entity>
-#include <liquiddb/EntityValue>
 
 
 namespace LiquidDb {
+
+class Value;
+
 
 class Constraint : public Link
 {
@@ -39,14 +41,14 @@ public:
 class ConstConstraint : public Constraint
 {
 public:
-	ConstConstraint(const Field &field, Operator op, const void *value);
+	ConstConstraint(const Field &field, Operator op, Value &value);
 
 	virtual int build(char *buffer, size_t size) const;
 
 private:
 	Field m_field;
 	Operator m_op;
-	const void *m_value;
+	const Value &m_value;
 };
 
 

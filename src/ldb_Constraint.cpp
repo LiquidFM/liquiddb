@@ -29,7 +29,7 @@ Constraint::~Constraint()
 {}
 
 
-ConstConstraint::ConstConstraint(const Field &field, Operator op, const void *value) :
+ConstConstraint::ConstConstraint(const Field &field, Operator op, Value &value) :
 	m_field(field),
 	m_op(op),
 	m_value(value)
@@ -41,7 +41,7 @@ int ConstConstraint::build(char *buffer, size_t size) const
 
     if (LIKELY(len > 0))
     {
-        int res = printValue(buffer + len, size - len, m_field.column, m_value, 0);
+        int res = printValue(buffer + len, size - len, m_field.column, &m_value);
 
         if (LIKELY(res > 0))
             len += res;
@@ -72,8 +72,9 @@ int SetConstraint::build(char *buffer, size_t size) const
     {
         Entity::IdsList::const_iterator i = m_idsList.begin();
         Entity::IdsList::const_iterator end = m_idsList.end();
+        Value value(*i);
 
-        int res = printValue(buffer + len, size - len, m_field.column, &(*i), 0);
+        int res = printValue(buffer + len, size - len, m_field.column, &value);
 
         if (LIKELY(res > 0))
             len += res;
@@ -89,7 +90,8 @@ int SetConstraint::build(char *buffer, size_t size) const
             else
                 return -1;
 
-            res = printValue(buffer + len, size - len, m_field.column, &(*i), 0);
+            value = (*i);
+            res = printValue(buffer + len, size - len, m_field.column, &value);
 
             if (LIKELY(res > 0))
                 len += res;

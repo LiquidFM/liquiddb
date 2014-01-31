@@ -26,6 +26,7 @@
 #define LDB_ENTITYCONSTRAINT_H_
 
 #include <liquiddb/Constraint>
+#include <liquiddb/EntityValue>
 
 
 namespace LiquidDb {

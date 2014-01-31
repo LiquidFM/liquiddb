@@ -31,66 +31,60 @@
 #include "ldb_Entity.h"
 #include "ldb_EntityTitle.h"
 #include "../structure/ldb_EntitiesTable.h"
+#include "../ldb_Value.h"
 
 
 namespace {
     using namespace LiquidDb;
 
-    union RawValue
+    static inline void set(Value &rawValue, const Entity &entity, const ::EFC::Variant &value)
     {
-        static inline void set(RawValue &rawValue, const Entity &entity, const ::EFC::Variant &value)
+        switch (entity.type())
         {
-            switch (entity.type())
-            {
-                case Entity::Int:
-                    rawValue.int32_value = value.asInt32();
-                    break;
+            case Entity::Int:
+                rawValue = value.asInt32();
+                break;
 
-                case Entity::String:
-                case Entity::Memo:
-                    rawValue.string_value = value.asString();
-                    break;
+            case Entity::String:
+            case Entity::Memo:
+                rawValue = value.asString();
+                break;
 
-                case Entity::Date:
-                case Entity::Time:
-                case Entity::DateTime:
-                    rawValue.uint64_value = value.asUint64();
-                    break;
+            case Entity::Date:
+            case Entity::Time:
+            case Entity::DateTime:
+                rawValue = value.asUint64();
+                break;
 
-                default:
-                    rawValue.uint64_value = 0;
-                    break;
-            }
+            default:
+                rawValue = static_cast<int64_t>(0);
+                break;
         }
+    }
 
-        static inline void get(const RawValue &rawValue, size_t size, const Entity &entity, ::EFC::Variant &value)
+    static inline void get(const Value &rawValue, const Entity &entity, ::EFC::Variant &value)
+    {
+        switch (entity.type())
         {
-            switch (entity.type())
-            {
-                case Entity::Int:
-                    value.setInt32(rawValue.int32_value);
-                    break;
+            case Entity::Int:
+                value.setInt32(rawValue);
+                break;
 
-                case Entity::String:
-                case Entity::Memo:
-                    value.setString(rawValue.string_value);
-                    break;
+            case Entity::String:
+            case Entity::Memo:
+                value.setString(rawValue);
+                break;
 
-                case Entity::Date:
-                case Entity::Time:
-                case Entity::DateTime:
-                    value.setUint64(rawValue.uint64_value);
-                    break;
+            case Entity::Date:
+            case Entity::Time:
+            case Entity::DateTime:
+                value.setUint64(rawValue);
+                break;
 
-                default:
-                    break;
-            }
+            default:
+                break;
         }
-
-        int32_t int32_value;
-        uint64_t uint64_value;
-        const char *string_value;
-    };
+    }
 }
 
 

@@ -162,12 +162,12 @@ public:
 private:
     EntityValue doNext(const Entity &entity)
     {
-        Entity::Id id;
+        Value id;
         EntityValue value;
         DataSet::Columns::const_iterator column = m_dataSet.columns().begin();
         DataSet::Columns::const_iterator columnProperty;
 
-        (*column).value(&id);
+        (*column).value(id);
 
         if (entity.type() == Entity::Composite)
         {
@@ -176,7 +176,7 @@ private:
             if (UNLIKELY(value.isValid() == false))
                 return EntityValue();
 
-            for (Entity::Id id = value.id(), nextId = id; id == nextId; (*column).value(&nextId))
+            for (Entity::Id currentId = id, nextId = id; currentId == nextId; nextId = (*column).value(id))
             {
                 ++(columnProperty = column);
 
@@ -203,12 +203,11 @@ private:
 
     EntityValue value(const Entity &entity, Entity::Id id, const DataSet::Columns::const_iterator &column) const
     {
-        size_t size = 0;
-        RawValue val = {};
+        Value val;
         ::EFC::Variant value;
 
-        (*column).value(&val);
-        RawValue::get(val, size, entity, value);
+        (*column).value(val);
+        get(val, entity, value);
 
         return EntityValue::createValue(entity, id, value);
     }
@@ -219,10 +218,10 @@ private:
             skip(property, column);
         else
         {
-            Entity::Id id;
+            Value id;
             EntityValue lastValue;
 
-            (*column).value(&id);
+            (*column).value(id);
             lastValue = static_cast<CompositeEntityValue::Implementation *>(value.m_implementation.get())->value(property, id);
 
             if (lastValue.isValid())

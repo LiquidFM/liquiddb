@@ -1,21 +1,27 @@
-/**
- * This file is part of QFM.
+/** @file ldb_Query.h
+ *  @brief TODO: Put description here.
  *
- * Copyright (C) 2011-2012 Dmitriy Vilkov, <dav.daemon@gmail.com>
+ * TODO: Put description here.
  *
- * QFM is free software: you can redistribute it and/or modify
+ * @copyright
+ * This file is part of liquiddb.
+ * @n@n
+ * Copyright (C) 2011-2013 Dmitriy Vilkov, <dav.daemon@gmail.com>
+ * @n@n
+ * liquiddb is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
- * QFM is distributed in the hope that it will be useful,
+ * @n@n
+ * liquiddb is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * @n@n
  * You should have received a copy of the GNU General Public License
- * along with QFM. If not, see <http://www.gnu.org/licenses/>.
+ * along with liquiddb. If not, see <http://www.gnu.org/licenses/>.
  */
+
 #ifndef LDB_QUERY_H_
 #define LDB_QUERY_H_
 
@@ -29,6 +35,7 @@ class Join;
 class Constraint;
 class Database;
 class Entity;
+class Value;
 
 
 class Query
@@ -43,14 +50,13 @@ public:
     typedef ::EFC::StaticArray<const Join *, MaxFields> Joins;
     typedef ::EFC::StaticArray<const Constraint *, MaxFields> Constraints;
 
-	struct Value
+	struct Val
 	{
 		const Table::Column *column;
-		const void *value;
-		size_t *size;
+		const Value *value;
 	};
 
-    typedef ::EFC::StaticArray<Value, MaxFields> Values;
+    typedef ::EFC::StaticArray<Val, MaxFields> Values;
 
 public:
 	Query();
@@ -93,9 +99,7 @@ public:
 	Insert(const Table &into);
 	virtual ~Insert();
 
-    void insert(Table::Column::Id column, const char *value);
-	void insert(Table::Column::Id column, const void *value);
-	void insert(Table::Column::Id column, const void **value, size_t &size);
+	void insert(Table::Column::Id column, Value &value);
 	virtual int build(char *buffer, size_t size) const;
 
 private:
@@ -110,8 +114,7 @@ public:
 	Update(const Table &table);
 	virtual ~Update();
 
-	void update(Table::Column::Id column, const void *value);
-	void update(Table::Column::Id column, const void **value, size_t &size);
+	void update(Table::Column::Id column, Value &value);
 	virtual int build(char *buffer, size_t size) const;
 
 private:

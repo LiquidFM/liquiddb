@@ -85,68 +85,46 @@ bool DataSet::columnIsNull(Table::Column::Id column) const
     return sqlite3_column_type(m_statement, column) == SQLITE_NULL;
 }
 
-void DataSet::columnValue(Table::Column::Id column, Table::Column::Type type, void *value) const
+void DataSet::columnValue(Table::Column::Id column, Table::Column::Type type, Value &value) const
 {
-    size_t size;
-    columnValueInternal(column, type, &value, size);
-}
-
-void DataSet::columnValue(Table::Column::Id column, Table::Column::Type type, const void **value, size_t &size) const
-{
-    columnValueInternal(column, type, const_cast<void **>(value), size);
-}
-
-void DataSet::columnValueInternal(Table::Column::Id column, Table::Column::Type type, void **value, size_t &size) const
-{
-	ASSERT(value != NULL);
-	size = 0;
-
 	switch (type)
 	{
 		case Table::Column::Int:
 		case Table::Column::MediumInt:
-			*static_cast<uint32_t *>(*value) = sqlite3_column_int(m_statement, column);
-			break;
-
 		case Table::Column::TinyInt:
-			*static_cast<uint8_t *>(*value) = sqlite3_column_int(m_statement, column);
+        case Table::Column::Boolean:
+		    value = sqlite3_column_int(m_statement, column);
 			break;
 
 		case Table::Column::SmallInt:
-			*static_cast<uint16_t *>(*value) = sqlite3_column_int(m_statement, column);
+            value = static_cast<int16_t>(sqlite3_column_int(m_statement, column));
 			break;
 
 		case Table::Column::BigInt:
-			*static_cast<uint64_t *>(*value) = sqlite3_column_int64(m_statement, column);
+			value = static_cast<int16_t>(sqlite3_column_int64(m_statement, column));
 			break;
 
 		case Table::Column::Text:
-			*reinterpret_cast<const unsigned char **>(const_cast<const void **>(value)) = sqlite3_column_text(m_statement, column);
-			size = sqlite3_column_bytes(m_statement, column);
+			value.setStr(reinterpret_cast<const char *>(sqlite3_column_text(m_statement, column)), sqlite3_column_bytes(m_statement, column));
 			break;
 
 		case Table::Column::Real:
 		case Table::Column::Double:
-			*static_cast<double *>(*value) = sqlite3_column_double(m_statement, column);
+			value = sqlite3_column_double(m_statement, column);
 			break;
 
 		case Table::Column::Float:
-			*static_cast<float *>(*value) = sqlite3_column_double(m_statement, column);
+			value = static_cast<float>(sqlite3_column_double(m_statement, column));
 			break;
 
 		case Table::Column::Date:
 		case Table::Column::Time:
 		case Table::Column::DateTime:
-			*static_cast<uint64_t *>(*value) = sqlite3_column_int64(m_statement, column);
-			break;
-
-		case Table::Column::Boolean:
-			*static_cast<bool *>(*value) = sqlite3_column_int(m_statement, column);
+			value = static_cast<uint64_t>(sqlite3_column_int64(m_statement, column));
 			break;
 
 		case Table::Column::Blob:
-			*const_cast<const void **>(value) = sqlite3_column_blob(m_statement, column);
-			size = sqlite3_column_bytes(m_statement, column);
+            value.setStr(static_cast<const char *>(sqlite3_column_blob(m_statement, column)), sqlite3_column_bytes(m_statement, column));
 			break;
 
 		default:

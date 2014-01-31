@@ -29,6 +29,19 @@
 
 namespace LiquidDb {
 
+PropertyTable::PropertyTable(Entity::Id entityId, Entity::Id propertyId) :
+    m_columns({
+        { Column::BigInt, "ID"                },
+        { Column::BigInt, "ENTITY_VALUE_ID"   },
+        { Column::BigInt, "PROPERTY_VALUE_ID" }
+    })
+{
+    int res = snprintf(m_name, MaxLengthOfName, "ENTITY_%" PRId64 "_PROPERTY_%" PRId64, entityId, propertyId);
+
+    if (UNLIKELY(res < 0))
+        m_name[0] = 0;
+}
+
 PropertyTable::PropertyTable(const Entity &entity, const Entity &property) :
     m_columns({
         { Column::BigInt, "ID"                },

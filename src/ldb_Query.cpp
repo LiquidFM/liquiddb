@@ -1,21 +1,27 @@
-/**
- * This file is part of QFM.
+/** @file ldb_Query.cpp
+ *  @brief TODO: Put description here.
  *
- * Copyright (C) 2011-2012 Dmitriy Vilkov, <dav.daemon@gmail.com>
+ * TODO: Put description here.
  *
- * QFM is free software: you can redistribute it and/or modify
+ * @copyright
+ * This file is part of liquiddb.
+ * @n@n
+ * Copyright (C) 2011-2013 Dmitriy Vilkov, <dav.daemon@gmail.com>
+ * @n@n
+ * liquiddb is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
- * QFM is distributed in the hope that it will be useful,
+ * @n@n
+ * liquiddb is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * @n@n
  * You should have received a copy of the GNU General Public License
- * along with QFM. If not, see <http://www.gnu.org/licenses/>.
+ * along with liquiddb. If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include "ldb_Query.h"
 #include "ldb_conversions_p.h"
 #include "ldb_Join.h"
@@ -25,13 +31,8 @@
 #include "structure/ldb_PropertiesTable.h"
 #include "entities/ldb_Entity.h"
 
-#include <brolly/assert.h>
-
 
 namespace LiquidDb {
-
-static size_t zero;
-
 
 Query::Query()
 {}
@@ -167,24 +168,9 @@ Insert::Insert(const Table &into) :
 Insert::~Insert()
 {}
 
-void Insert::insert(Table::Column::Id column, const char *value)
+void Insert::insert(Table::Column::Id column, Value &value)
 {
-    ASSERT(m_into->column(column)->type == Table::Column::Text);
-    m_values.push_back({ m_into->column(column), &value, &zero });
-}
-
-void Insert::insert(Table::Column::Id column, const void *value)
-{
-    ASSERT(m_into->column(column)->type != Table::Column::Text);
-    ASSERT(m_into->column(column)->type != Table::Column::Blob);
-	m_values.push_back({ m_into->column(column), value, &zero });
-}
-
-void Insert::insert(Table::Column::Id column, const void **value, size_t &size)
-{
-    ASSERT(m_into->column(column)->type == Table::Column::Text ||
-           m_into->column(column)->type == Table::Column::Blob);
-	m_values.push_back({ m_into->column(column), value, &size });
+	m_values.push_back({ m_into->column(column), &value });
 }
 
 int Insert::build(char *buffer, size_t size) const
@@ -241,7 +227,7 @@ int Insert::build(char *buffer, size_t size) const
 				return -1;
 
 			i = m_values.begin();
-			res = printValue(buffer + len, size - len, (*i).column, (*i).value, *(*i).size);
+			res = printValue(buffer + len, size - len, (*i).column, (*i).value);
 
 			if (LIKELY(res > 0))
 				len += res;
@@ -257,7 +243,7 @@ int Insert::build(char *buffer, size_t size) const
 				else
 					return -1;
 
-				res = printValue(buffer + len, size - len, (*i).column, (*i).value, *(*i).size);
+				res = printValue(buffer + len, size - len, (*i).column, (*i).value);
 
 				if (LIKELY(len > 0))
 					len += res;
@@ -294,14 +280,9 @@ Update::Update(const Table &table) :
 Update::~Update()
 {}
 
-void Update::update(Table::Column::Id column, const void *value)
+void Update::update(Table::Column::Id column, Value &value)
 {
-	m_values.push_back({ m_table->column(column), value, &zero });
-}
-
-void Update::update(Table::Column::Id column, const void **value, size_t &size)
-{
-	m_values.push_back({ m_table->column(column), value, &size });
+	m_values.push_back({ m_table->column(column), &value });
 }
 
 int Update::build(char *buffer, size_t size) const
@@ -324,7 +305,7 @@ int Update::build(char *buffer, size_t size) const
 			else
 				return -1;
 
-			res = printValue(buffer + len, size - len, (*i).column, (*i).value, *(*i).size);
+			res = printValue(buffer + len, size - len, (*i).column, (*i).value);
 
 			if (LIKELY(res > 0))
 				len += res;
@@ -340,7 +321,7 @@ int Update::build(char *buffer, size_t size) const
 				else
 					return -1;
 
-				res = printValue(buffer + len, size - len, (*i).column, (*i).value, *(*i).size);
+				res = printValue(buffer + len, size - len, (*i).column, (*i).value);
 
 				if (LIKELY(res > 0))
 					len += res;
