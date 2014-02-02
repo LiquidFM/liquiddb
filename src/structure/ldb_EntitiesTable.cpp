@@ -33,7 +33,18 @@ EntitiesTable::EntitiesTable() :
         { Column::BigInt,   "ID"    },
         { Column::SmallInt, "TYPE"  },
         { Column::Text,     "NAME"  },
-        { Column::Text,     "TITLE" }
+        { Column::Text,     "TITLE" },
+
+        { Column::Blob,     "P0"    },
+        { Column::Blob,     "P1"    },
+        { Column::Blob,     "P2"    },
+        { Column::Blob,     "P3"    },
+        { Column::Blob,     "P4"    },
+        { Column::Blob,     "P5"    },
+        { Column::Blob,     "P6"    },
+        { Column::Blob,     "P7"    },
+        { Column::Blob,     "P8"    },
+        { Column::Blob,     "P9"    }
     })
 {}
 
@@ -52,7 +63,7 @@ const Table::Column *EntitiesTable::primaryKeyColumn() const
 
 EntitiesTable::Column::Id EntitiesTable::columnsCount() const
 {
-    return ColumnsCount;
+    return ColumnsCount + MetaPropertiesCount;
 }
 
 const Table::Column *EntitiesTable::column(Column::Id i) const

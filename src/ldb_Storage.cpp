@@ -29,13 +29,13 @@
 
 #include "structure/ldb_EntitiesTable.h"
 #include "structure/ldb_PropertiesTable.h"
-#include "structure/ldb_MetaPropertiesTable.h"
 #include "structure/ldb_EntityTable.h"
 #include "structure/ldb_PropertyTable.h"
 
 #include "entities/ldb_Entity_p.h"
 #include "entities/ldb_EntityValueReader_p.h"
 
+#include <efc/ScopedPointer>
 #include <brolly/assert.h>
 
 
@@ -70,12 +70,7 @@ Storage::Storage(const ::EFC::String &fileName, bool create) :
                 PropertiesTable propertiesTable;
 
                 if (m_database.create(propertiesTable))
-                {
-                    MetaPropertiesTable metaPropertiesTable;
-
-                    m_database.create(metaPropertiesTable);
-                    m_database.setVersion(1);
-                }
+                    m_database.setVersion(0);
             }
         }
         else
@@ -154,6 +149,62 @@ EntityValueReader Storage::entityValues(const Entity &entity, const Constraint &
     }
 
     return EntityValueReader();
+}
+
+::EFC::Variant Storage::metaPropertyValue(const Entity &entity, unsigned char property) const
+{
+    ASSERT(property < EntitiesTable::MetaPropertiesCount);
+    ::EFC::Variant res;
+    DataSet dataSet;
+
+    EntitiesTable entitiesTable;
+    Select query(entitiesTable);
+    query.select(EntitiesTable::ColumnsCount + property);
+
+    Value idValue = entity.id();
+    Field idField(entitiesTable, EntitiesTable::Id);
+    ConstConstraint constraint(idField, Constraint::Equal, idValue);
+    query.where(constraint);
+
+    if (m_database.perform(query, dataSet) && dataSet.next())
+    {
+        (*dataSet.columns().begin()).value(idValue);
+        res.deserialize(reinterpret_cast<const unsigned char *>(idValue.str()), idValue.size());
+    }
+
+    return res;
+}
+
+bool Storage::setMetaPropertyValue(const Entity &entity, unsigned char property, const ::EFC::Variant &value)
+{
+    ASSERT(property < EntitiesTable::MetaPropertiesCount);
+    ASSERT(value.isValid());
+
+    size_t size = value.serialize(NULL, 0);
+    ::EFC::ScopedPointer<unsigned char> buffer(new (std::nothrow) unsigned char[size]);
+
+    if (LIKELY(buffer != NULL))
+    {
+        EntitiesTable entitiesTable;
+        Update query(entitiesTable);
+
+        value.serialize(buffer.get(), size);
+
+        Value val;
+        val.str() = reinterpret_cast<const char *>(buffer.get());
+        val.size() = size;
+        query.update(EntitiesTable::ColumnsCount + property, val);
+
+        Value idVal = entity.id();
+        Field idField(entitiesTable, EntitiesTable::Id);
+        ConstConstraint constraint(idField, Constraint::Equal, idVal);
+        query.where(constraint);
+
+        if (m_database.perform(query))
+            return true;
+    }
+
+    return false;
 }
 
 Entity Storage::createEntity(Entity::Type type, const ::EFC::String &name, const ::EFC::String &title)
@@ -631,7 +682,7 @@ bool Storage::removeOverlappingIds(const Entity &entity, const Entity &property,
                 PropertyTable propertyTable((*i).second, property);
 
                 Select query(propertyTable);
-                query.select(propertyTable, PropertyTable::PropertyValueId);
+                query.select(PropertyTable::PropertyValueId);
 
                 Entity::IdsList tmp(setToList(ids));
                 Field propertyValueId(propertyTable, PropertyTable::PropertyValueId);
@@ -668,7 +719,7 @@ bool Storage::removeSelfOverlappingIds(const Entity &entity, const Entity::IdsLi
         PropertyTable propertyTable(entity, property);
 
         Select query(propertyTable);
-        query.select(propertyTable, PropertyTable::PropertyValueId);
+        query.select(PropertyTable::PropertyValueId);
 
         Field entityValueId(propertyTable, PropertyTable::EntityValueId);
         SetConstraint constraint1(entityValueId, Constraint::NotIn, entityIds);
@@ -759,7 +810,7 @@ bool Storage::cleanupPropertyValues(const Entity &entity, const Entity::IdsList 
         PropertyTable propertyTable(entity, (*i).second.entity);
 
         Select query(propertyTable);
-        query.select(propertyTable, PropertyTable::PropertyValueId);
+        query.select(PropertyTable::PropertyValueId);
 
         Field entityValueId(propertyTable, PropertyTable::EntityValueId);
         SetConstraint constraint(entityValueId, Constraint::In, ids);
@@ -796,7 +847,7 @@ bool Storage::cleanupPropertyValues(const Entity &entity, const Entity &property
     PropertyTable propertyTable(entity, property);
 
     Select query(propertyTable);
-    query.select(propertyTable, PropertyTable::PropertyValueId);
+    query.select(PropertyTable::PropertyValueId);
 
     {
         Value id;

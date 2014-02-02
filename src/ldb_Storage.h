@@ -56,6 +56,9 @@ public:
     EntityValueReader entityValues(const Entity &entity);
     EntityValueReader entityValues(const Entity &entity, const Constraint &constraint);
 
+    ::EFC::Variant metaPropertyValue(const Entity &entity, unsigned char property) const;
+    bool setMetaPropertyValue(const Entity &entity, unsigned char property, const ::EFC::Variant &value);
+
     Entity createEntity(Entity::Type type, const ::EFC::String &name, const ::EFC::String &title);
     bool removeEntity(const Entity &entity);
 

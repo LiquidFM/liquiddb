@@ -107,6 +107,11 @@ void Select::select(const Table &table)
 		m_fields.push_back({ table, i });
 }
 
+void Select::select(Table::Column::Id column)
+{
+    m_fields.push_back({ *m_from, column });
+}
+
 void Select::select(const Table &table, Table::Column::Id column)
 {
 	m_fields.push_back({ table, column });

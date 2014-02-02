@@ -64,7 +64,7 @@ public:
     bool remove(const Table &table);
 	bool perform(const Update &query);
 	bool perform(const Insert &query, Id &id);
-	bool perform(const Select &query, DataSet &data);
+	bool perform(const Select &query, DataSet &data) const;
     bool perform(const Delete &query);
 	bool transaction();
 	bool commit();

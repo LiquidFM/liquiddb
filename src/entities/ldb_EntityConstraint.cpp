@@ -28,7 +28,6 @@
 
 #include "../structure/ldb_EntitiesTable.h"
 #include "../structure/ldb_PropertiesTable.h"
-#include "../structure/ldb_MetaPropertiesTable.h"
 #include "../structure/ldb_EntityTable.h"
 #include "../structure/ldb_PropertyTable.h"
 

@@ -81,6 +81,7 @@ public:
 	virtual ~Select();
 
 	void select(const Table &table);
+    void select(Table::Column::Id column);
 	void select(const Table &table, Table::Column::Id column);
 	virtual int build(char *buffer, size_t size) const;
 

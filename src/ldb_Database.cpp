@@ -241,7 +241,7 @@ bool Database::perform(const Insert &query, Id &id)
 	return false;
 }
 
-bool Database::perform(const Select &query, DataSet &data)
+bool Database::perform(const Select &query, DataSet &data) const
 {
 	ASSERT(m_db != NULL);
 	char buffer[BufferSize];

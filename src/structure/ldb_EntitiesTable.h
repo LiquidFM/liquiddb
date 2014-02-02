@@ -45,6 +45,11 @@ public:
         ColumnsCount
     };
 
+    enum
+    {
+        MetaPropertiesCount = 10
+    };
+
 public:
     EntitiesTable();
     virtual ~EntitiesTable();
@@ -59,7 +64,7 @@ public:
     virtual const Index *index(Column::Id i) const;
 
 private:
-    Column m_columns[ColumnsCount];
+    Column m_columns[ColumnsCount + MetaPropertiesCount];
 };
 
 }
