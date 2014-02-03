@@ -121,7 +121,6 @@ EntityValueReader Storage::entityValues(const Entity &entity)
         DataSet data;
         Select query(context->entityTable());
 
-        query.select(context->entityTable());
         context->setupQuery(query);
 
         if (m_database.perform(query, data))
@@ -140,7 +139,6 @@ EntityValueReader Storage::entityValues(const Entity &entity, const Constraint &
         DataSet data;
         Select query(context->entityTable());
 
-        query.select(context->entityTable());
         context->setupQuery(query);
         query.where(constraint);
 

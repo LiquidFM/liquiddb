@@ -43,7 +43,19 @@ namespace LiquidDb {
 class EntityValueReader::Property
 {
 public:
-    Property(const Table &entityTable, const Entity &entity, const Entity &property) :
+    Property()
+    {}
+    virtual ~Property()
+    {}
+
+    virtual bool setupQuery(Select &query) = 0;
+};
+
+
+class EntityValueReader::SimpleProperty : public EntityValueReader::Property
+{
+public:
+    SimpleProperty(const Table &entityTable, const Entity &entity, const Entity &property) :
         m_propertyTable(entity, property),
         m_entityValueId(m_propertyTable, PropertyTable::EntityValueId),
         m_fieldId1(entityTable, EntityTable::Id),
@@ -55,9 +67,16 @@ public:
         m_join2(m_fieldId2, Join::Equal, m_propertyValueId)
     {}
 
-    const Join &join1() const { return m_join1; }
-    const Join &join2() const { return m_join2; }
-    const EntityTable &propertyTable() const { return m_entityPropertyTable; }
+    virtual bool setupQuery(Select &query)
+    {
+        query.join(m_join1);
+        query.join(m_join2);
+        query.select(m_entityPropertyTable);
+        return true;
+    }
+
+protected:
+    const EntityTable &entityTable() const { return m_entityPropertyTable; }
 
 private:
     PropertyTable m_propertyTable;
@@ -72,10 +91,48 @@ private:
 };
 
 
+class EntityValueReader::CompositeProperty : public EntityValueReader::SimpleProperty
+{
+public:
+    CompositeProperty(const Table &entityTable, const Entity &entity, const Entity &property) :
+        SimpleProperty(entityTable, entity, property),
+        m_entity(property)
+    {}
+
+    virtual bool setupQuery(Select &query)
+    {
+        PropertyHolder property;
+
+        SimpleProperty::setupQuery(query);
+
+        for (auto i : m_entity.properties())
+        {
+            if (i.second.entity.type() == Entity::Composite)
+                property.reset(new (std::nothrow) CompositeProperty(entityTable(), m_entity, i.second.entity));
+            else
+                property.reset(new (std::nothrow) SimpleProperty(entityTable(), m_entity, i.second.entity));
+
+            if (UNLIKELY(property == NULL))
+                return false;
+
+            if (UNLIKELY(property->setupQuery(query) == false))
+                return false;
+
+            if (UNLIKELY(m_properties.push_back(std::move(property))) == false)
+                return false;
+        }
+
+        return true;
+    }
+
+private:
+    Entity m_entity;
+    PropertiesList m_properties;
+};
+
+
 class EntityValueReader::Context
 {
-    typedef ::EFC::List<PropertyHolder> PropertiesList;
-
 public:
     Context(const Entity &entity) :
         m_entity(entity),
@@ -87,16 +144,22 @@ public:
 
     bool setupQuery(Select &query)
     {
+        PropertyHolder property;
+
+        query.select(m_entityTable);
+
         for (auto i : m_entity.properties())
         {
-            PropertyHolder property(new (std::nothrow) Property(m_entityTable, m_entity, i.second.entity));
+            if (i.second.entity.type() == Entity::Composite)
+                property.reset(new (std::nothrow) CompositeProperty(m_entityTable, m_entity, i.second.entity));
+            else
+                property.reset(new (std::nothrow) SimpleProperty(m_entityTable, m_entity, i.second.entity));
 
             if (UNLIKELY(property == NULL))
                 return false;
 
-            query.join(property->join1());
-            query.join(property->join2());
-            query.select(property->propertyTable());
+            if (UNLIKELY(property->setupQuery(query) == false))
+                return false;
 
             if (UNLIKELY(m_properties.push_back(std::move(property))) == false)
                 return false;

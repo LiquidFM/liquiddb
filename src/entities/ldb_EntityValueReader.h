@@ -50,12 +50,15 @@ public:
 
 private:
     class Implementation;
+    class CompositeProperty;
+    class SimpleProperty;
     class Property;
     class Context;
 
     typedef ::EFC::SharedPointer<Implementation> Holder;
     typedef ::EFC::ScopedPointer<Context> ContextHolder;
     typedef ::EFC::ScopedPointer<Property> PropertyHolder;
+    typedef ::EFC::List<PropertyHolder> PropertiesList;
 
 private:
     friend class Storage;
