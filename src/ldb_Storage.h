@@ -53,8 +53,8 @@ public:
     bool commit();
     void rollback();
 
-    EntityValueReader entityValues(const Entity &entity);
-    EntityValueReader entityValues(const Entity &entity, const Constraint &constraint);
+    EntityValueReader entityValues(const Entity &entity) const;
+    EntityValueReader entityValues(const Entity &entity, const Constraint &constraint) const;
 
     ::EFC::Variant metaPropertyValue(const Entity &entity, unsigned char property) const;
     bool setMetaPropertyValue(const Entity &entity, unsigned char property, const ::EFC::Variant &value);

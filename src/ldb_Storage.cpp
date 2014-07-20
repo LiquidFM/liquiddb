@@ -112,7 +112,7 @@ void Storage::rollback()
     m_undoStack.rollback();
 }
 
-EntityValueReader Storage::entityValues(const Entity &entity)
+EntityValueReader Storage::entityValues(const Entity &entity) const
 {
     EntityValueReader::ContextHolder context(new (std::nothrow) EntityValueReader::Context(entity));
 
@@ -130,7 +130,7 @@ EntityValueReader Storage::entityValues(const Entity &entity)
     return EntityValueReader();
 }
 
-EntityValueReader Storage::entityValues(const Entity &entity, const Constraint &constraint)
+EntityValueReader Storage::entityValues(const Entity &entity, const Constraint &constraint) const
 {
     EntityValueReader::ContextHolder context(new (std::nothrow) EntityValueReader::Context(entity));
 
