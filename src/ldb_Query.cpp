@@ -72,22 +72,24 @@ int Query::build(char *buffer, size_t size) const
 
     if (!m_constraints.empty())
     {
-        res = snprintf(buffer + len, size - len, " WHERE ");
-
-        if (LIKELY(res > 0))
-            len += res;
-        else
-            return -1;
+        enum { Length = sizeof(" WHERE ") - 1 };
+        int len2 = len;
+        len += Length;
 
         for (Constraints::const_iterator i = m_constraints.begin(), end = m_constraints.end(); i != end; ++i)
         {
             res = (*i)->build(buffer + len, size - len);
 
-            if (LIKELY(res > 0))
+            if (LIKELY(res >= 0))
                 len += res;
             else
                 return -1;
         }
+
+        if (len - Length == len2)
+            len -= Length;
+        else
+            ::memcpy(buffer + len2, " WHERE ", Length);
     }
 
     return len;
