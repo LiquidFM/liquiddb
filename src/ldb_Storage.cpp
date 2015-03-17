@@ -495,7 +495,12 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
     Value val;
     set(val, value.entity(), newValue);
 
+    Value valueId = value.id();
+    Field valueIdField(entityTable, EntityTable::Id);
+    ConstConstraint constraint(valueIdField, Constraint::Equal, valueId);
+
     query.update(EntityTable::Value, val);
+    query.where(constraint);
 
     if (m_database.perform(query))
         return m_undoStack.undoUpdateValue(value, newValue);
