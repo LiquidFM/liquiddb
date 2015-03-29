@@ -37,28 +37,59 @@
 namespace {
     using namespace LiquidDb;
 
-    static inline void set(Value &rawValue, const Entity &entity, const ::EFC::Variant &value)
+    static inline bool set(Value &rawValue, const Entity &entity, ::EFC::Variant &value)
     {
         switch (entity.type())
         {
             case Entity::Int:
                 rawValue = value.asInt32();
-                break;
+                return true;
 
             case Entity::String:
             case Entity::Memo:
-                rawValue = value.asString();
-                break;
+            {
+                char *buf = new (std::nothrow) char[value.size() * 2];
+
+                if (LIKELY(buf != NULL))
+                {
+                    size_t size = value.size() + 1;
+                    memcpy(buf, value.asString(), size);
+
+                    for (size_t i = 0; i < size; ++i)
+                        if (buf[i] == '\'')
+                        {
+                            memmove(buf + i + 1, buf + i, size - i);
+                            ++size;
+                            ++i;
+                        }
+
+                    if (size > value.size() + 1)
+                    {
+                        value = ::EFC::Variant(buf);
+
+                        if (UNLIKELY(value.isValid() == false))
+                        {
+                            delete [] buf;
+                            return false;
+                        }
+                    }
+
+                    rawValue = value.asString();
+                    delete [] buf;
+                    return true;
+                }
+
+                return false;
+            }
 
             case Entity::Date:
             case Entity::Time:
             case Entity::DateTime:
                 rawValue = value.asUint64();
-                break;
+                return true;
 
             default:
-                rawValue = static_cast<int64_t>(0);
-                break;
+                return false;
         }
     }
 

@@ -54,11 +54,15 @@ int EntityConstraint::build(char *buffer, size_t size) const
         Field field(entityTable, EntityTable::Value);
 
         Value val;
-        set(val, m_property, m_value.value());
+        ::EFC::Variant tmpVal(m_value.value());
 
-        ConstConstraint constraint(field, m_op, val);
+        if (set(val, m_property, tmpVal))
+        {
+            ConstConstraint constraint(field, m_op, val);
+            return constraint.build(buffer, size);
+        }
 
-        return constraint.build(buffer, size);
+        return -1;
     }
     else
     {

@@ -475,12 +475,15 @@ EntityValue Storage::addValue(const Entity &entity, const ::EFC::Variant &value)
     Insert query(entityTable);
 
     Value val;
-    set(val, entity, value);
+    ::EFC::Variant tmpVal(value);
 
-    query.insert(EntityTable::Value, val);
+    if (set(val, entity, tmpVal))
+    {
+        query.insert(EntityTable::Value, val);
 
-   if (m_database.perform(query, id))
-       return EntityValue::createValue(entity, id, value);
+        if (m_database.perform(query, id))
+           return EntityValue::createValue(entity, id, value);
+    }
 
     return EntityValue();
 }
@@ -493,17 +496,20 @@ bool Storage::updateValue(const EntityValue &value, const ::EFC::Variant &newVal
     Update query(entityTable);
 
     Value val;
-    set(val, value.entity(), newValue);
+    ::EFC::Variant tmpVal(newValue);
 
-    Value valueId = value.id();
-    Field valueIdField(entityTable, EntityTable::Id);
-    ConstConstraint constraint(valueIdField, Constraint::Equal, valueId);
+    if (set(val, value.entity(), tmpVal))
+    {
+        Value valueId = value.id();
+        Field valueIdField(entityTable, EntityTable::Id);
+        ConstConstraint constraint(valueIdField, Constraint::Equal, valueId);
 
-    query.update(EntityTable::Value, val);
-    query.where(constraint);
+        query.update(EntityTable::Value, val);
+        query.where(constraint);
 
-    if (m_database.perform(query))
-        return m_undoStack.undoUpdateValue(value, newValue);
+        if (m_database.perform(query))
+            return m_undoStack.undoUpdateValue(value, newValue);
+    }
 
     return false;
 }
