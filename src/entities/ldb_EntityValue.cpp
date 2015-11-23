@@ -43,9 +43,15 @@ EntityValue::Id EntityValue::id() const
     return m_implementation->id();
 }
 
-::EFC::Variant EntityValue::value() const
+const ::EFC::Variant &EntityValue::value() const
 {
     return m_implementation->value();
+}
+
+const char *EntityValue::nullString()
+{
+    static const char nullString[] = "<NULL>";
+    return nullString;
 }
 
 void EntityValue::addValue(const EntityValue &value, const EntityValue &property)
@@ -73,14 +79,19 @@ void EntityValue::removeValue(const EntityValue &value, const List &values)
     static_cast<CompositeEntityValue::Implementation *>(value.m_implementation.get())->remove(values);
 }
 
-EntityValue EntityValue::createValue(const Entity &entity, EntityValue::Id id)
+EntityValue EntityValue::createSimpleValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value)
+{
+    return EntityValue(new (std::nothrow) Implementation(entity, id, value));
+}
+
+EntityValue EntityValue::createCompositeValue(const Entity &entity, EntityValue::Id id)
 {
     return EntityValue(new (std::nothrow) CompositeEntityValue::Implementation(entity, id));
 }
 
-EntityValue EntityValue::createValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value)
+EntityValue EntityValue::createCompositeValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value)
 {
-    return EntityValue(new (std::nothrow) Implementation(entity, id, value));
+    return EntityValue(new (std::nothrow) CompositeEntityValue::Implementation(entity, id, value));
 }
 
 EntityValue::EntityValue(Holder &holder) :

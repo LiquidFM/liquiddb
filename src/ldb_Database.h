@@ -20,7 +20,6 @@
 #define LDB_DATABASE_H_
 
 #include <cstdint>
-#include <efc/String>
 #include <platform/utils.h>
 
 
@@ -38,7 +37,7 @@ class Delete;
 class DataSet;
 
 
-class Database
+class PLATFORM_MAKE_PUBLIC Database
 {
 	PLATFORM_MAKE_NONCOPYABLE(Database)
 
@@ -58,7 +57,7 @@ public:
 
 	int lastError() const { return m_error; }
 
-	bool open(const ::EFC::String &filename);
+	bool open(const char *filename);
 	bool exsitst(const Table &table) const;
 	bool create(const Table &table);
     bool remove(const Table &table);

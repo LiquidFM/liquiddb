@@ -60,7 +60,7 @@ namespace LiquidDb {
 Storage::Storage(const ::EFC::String &fileName, bool create) :
     m_undoStack(m_entities)
 {
-    if (m_database.open(fileName))
+    if (m_database.open(fileName.c_str()))
         if (create)
         {
             EntitiesTable entitiesTable;
@@ -380,7 +380,7 @@ EntityValue Storage::addValue(const Entity &entity)
     Insert query(entityTable);
 
     if (m_database.perform(query, id))
-        return EntityValue::createValue(entity, id);
+        return EntityValue::createCompositeValue(entity, id);
 
     return EntityValue();
 }
@@ -482,7 +482,7 @@ EntityValue Storage::addValue(const Entity &entity, const ::EFC::Variant &value)
         query.insert(EntityTable::Value, val);
 
         if (m_database.perform(query, id))
-           return EntityValue::createValue(entity, id, value);
+           return EntityValue::createSimpleValue(entity, id, value);
     }
 
     return EntityValue();

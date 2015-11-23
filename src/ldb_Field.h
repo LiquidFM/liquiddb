@@ -30,16 +30,29 @@ struct Field
 
 public:
 	Field() :
+	    expr(NULL),
+        alias(NULL),
 		table(NULL),
 		column(NULL)
 	{}
 
-	Field(const Table &table, Table::Column::Id column) :
+    Field(const char *expr, const char *alias) :
+        expr(expr),
+        alias(alias),
+        table(NULL),
+        column(NULL)
+    {}
+
+    Field(const Table &table, Table::Column::Id column) :
+        expr(NULL),
+        alias(NULL),
 		table(&table),
 		column(table.column(column))
 	{}
 
 public:
+	const char *expr;
+    const char *alias;
 	const Table *table;
 	const Table::Column *column;
 };

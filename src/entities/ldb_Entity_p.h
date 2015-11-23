@@ -103,6 +103,7 @@ namespace {
 
             case Entity::String:
             case Entity::Memo:
+            case Entity::Composite:
                 value.setString(rawValue);
                 break;
 

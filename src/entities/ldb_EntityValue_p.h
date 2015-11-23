@@ -48,7 +48,7 @@ public:
     const Entity &entity() const { return m_entity; }
 
     Id id() const { return m_id; }
-    virtual ::EFC::Variant value() const { return m_value; }
+    virtual const ::EFC::Variant &value() const { return m_value; }
     ::EFC::Variant setValue(const ::EFC::Variant &value) { ::EFC::Variant tmp(m_value); m_value = value; return tmp; }
 
 protected:
@@ -73,13 +73,16 @@ public:
         EntityValue::Implementation(entity, id)
     {}
 
+    Implementation(const Entity &entity, Id id, const ::EFC::Variant &value) :
+        EntityValue::Implementation(entity, id, value)
+    {}
+
     virtual ~Implementation()
     {}
 
-    virtual ::EFC::Variant value() const
+    virtual const ::EFC::Variant &value() const
     {
         enum { BufferSize = 1024 };
-        static const char nullString[] = "<NULL>";
 
         if (m_value.isValid())
             return m_value;
@@ -107,7 +110,7 @@ public:
                                 Map::const_iterator values = m_items.find(q.second.entity);
 
                                 if (values == m_items.end() || (*values).second.empty())
-                                    val += nullString;
+                                    val += nullString();
                                 else
                                 {
                                     char buffer[BufferSize];
@@ -147,7 +150,7 @@ public:
                                     if (LIKELY(res > 0))
                                         val += buffer;
                                     else
-                                        val += nullString;
+                                        val += nullString();
                                 }
 
                                 ok = true;
@@ -155,7 +158,7 @@ public:
                             }
 
                         if (!ok)
-                            val += nullString;
+                            val += nullString();
 
                         break;
                     }

@@ -54,15 +54,18 @@ public:
     const Entity &entity() const;
 
     Id id() const;
-    ::EFC::Variant value() const;
+    const ::EFC::Variant &value() const;
+
+    static const char *nullString();
 
     static void addValue(const EntityValue &value, const EntityValue &property);
     static void takeValue(const EntityValue &value, const EntityValue &property);
     static ::EFC::Variant updateValue(const EntityValue &value, const ::EFC::Variant &newValue);
     static void removeValue(const EntityValue &value, const EntityValue &property);
     static void removeValue(const EntityValue &value, const List &values);
-    static EntityValue createValue(const Entity &entity, EntityValue::Id id);
-    static EntityValue createValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value);
+    static EntityValue createSimpleValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value);
+    static EntityValue createCompositeValue(const Entity &entity, EntityValue::Id id);
+    static EntityValue createCompositeValue(const Entity &entity, EntityValue::Id id, const ::EFC::Variant &value);
 
 protected:
     class Implementation;

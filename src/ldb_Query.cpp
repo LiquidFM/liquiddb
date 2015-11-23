@@ -55,6 +55,16 @@ void Query::where(const Constraints &constraints)
     m_constraints = constraints;
 }
 
+void Query::orderby(const char *alias)
+{
+    m_orderby = Field(NULL, alias);
+}
+
+void Query::orderby(const Table &table, Table::Column::Id column)
+{
+    m_orderby = Field(table, column);
+}
+
 int Query::build(char *buffer, size_t size) const
 {
     int res;
@@ -92,6 +102,25 @@ int Query::build(char *buffer, size_t size) const
             ::memcpy(buffer + len2, " WHERE ", Length);
     }
 
+    if (m_orderby.alias != NULL)
+    {
+        res = snprintf(buffer + len, size - len, " ORDER BY %s", m_orderby.alias);
+
+        if (LIKELY(res > 0))
+            len += res;
+        else
+            return -1;
+    }
+    else if (m_orderby.table != NULL)
+    {
+        res = snprintf(buffer + len, size - len, " ORDER BY %s.%s", m_orderby.table->name(), m_orderby.column->name);
+
+        if (LIKELY(res > 0))
+            len += res;
+        else
+            return -1;
+    }
+
     return len;
 }
 
@@ -114,6 +143,11 @@ void Select::select(Table::Column::Id column)
     m_fields.push_back({ *m_from, column });
 }
 
+void Select::select(const char *expr, const char *alias)
+{
+    m_fields.push_back({ expr, alias });
+}
+
 void Select::select(const Table &table, Table::Column::Id column)
 {
 	m_fields.push_back({ table, column });
@@ -131,7 +165,13 @@ int Select::build(char *buffer, size_t size) const
 			Fields::const_iterator i = m_fields.begin();
 			Fields::const_iterator end = m_fields.end();
 
-			res = snprintf(buffer + len, size - len, "SELECT %s.%s", (*i).table->name(), (*i).column->name);
+			if ((*i).expr != NULL)
+	            if ((*i).alias != NULL)
+                    res = snprintf(buffer + len, size - len, "SELECT (%s) AS %s", (*i).expr, (*i).alias);
+	            else
+	                res = snprintf(buffer + len, size - len, "SELECT %s", (*i).expr);
+			else
+			    res = snprintf(buffer + len, size - len, "SELECT %s.%s", (*i).table->name(), (*i).column->name);
 
 			if (LIKELY(res > 0))
 				len += res;
@@ -140,7 +180,13 @@ int Select::build(char *buffer, size_t size) const
 
 			for (++i; i != end; ++i)
 			{
-				res = snprintf(buffer + len, size - len, ", %s.%s", (*i).table->name(), (*i).column->name);
+	            if ((*i).expr != NULL)
+	                if ((*i).alias != NULL)
+                        res = snprintf(buffer + len, size - len, ", (%s) AS %s", (*i).expr, (*i).alias);
+	                else
+	                    res = snprintf(buffer + len, size - len, ", %s", (*i).expr);
+	            else
+	                res = snprintf(buffer + len, size - len, ", %s.%s", (*i).table->name(), (*i).column->name);
 
 				if (LIKELY(res > 0))
 					len += res;

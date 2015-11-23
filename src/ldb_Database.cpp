@@ -56,10 +56,10 @@ Database::~Database()
 	sqlite3_close(m_db);
 }
 
-bool Database::open(const ::EFC::String &filename)
+bool Database::open(const char *filename)
 {
 	ASSERT(m_db == NULL);
-	return sqlite3_open(filename.c_str(), &m_db) == SQLITE_OK;
+	return sqlite3_open(filename, &m_db) == SQLITE_OK;
 }
 
 bool Database::exsitst(const Table &table) const

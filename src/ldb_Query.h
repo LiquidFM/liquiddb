@@ -65,12 +65,15 @@ public:
 	void join(const Join &link);
 	void where(const Constraint &constraint);
     void where(const Constraints &constraints);
+    void orderby(const char *alias);
+    void orderby(const Table &table, Table::Column::Id column);
 
 	virtual int build(char *buffer, size_t size) const;
 
 protected:
 	Joins m_joins;
 	Constraints m_constraints;
+	Field m_orderby;
 };
 
 
@@ -82,6 +85,7 @@ public:
 
 	void select(const Table &table);
     void select(Table::Column::Id column);
+    void select(const char *expr, const char *alias = NULL);
 	void select(const Table &table, Table::Column::Id column);
 	virtual int build(char *buffer, size_t size) const;
 

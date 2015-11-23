@@ -47,7 +47,15 @@ public:
             {
                 const Table::Column *column() const { return (*iterator).column; }
                 bool isNull() const { return dataSet->columnIsNull(pos); }
-                Value &value(Value &value) const { dataSet->columnValue(pos, column()->type, value); return value; }
+                Value &value(Value &value) const
+                {
+                    if (column() == NULL)
+                        dataSet->columnValue(pos, Table::Column::Text, value);
+                    else
+                        dataSet->columnValue(pos, column()->type, value);
+
+                    return value;
+                }
 
                 Table::Column::Id pos;
                 const DataSet *dataSet;

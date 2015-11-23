@@ -148,6 +148,11 @@ public:
 
         query.select(m_entityTable);
 
+        if (m_entity.type() == Entity::Composite)
+            selectTitle(query);
+        else
+            query.orderby(m_entityTable, EntityTable::Columns::Value);
+
         for (auto i : m_entity.properties())
         {
             if (i.second.entity.type() == Entity::Composite)
@@ -169,7 +174,93 @@ public:
     }
 
 private:
+    enum
+    {
+        BufferSize = 1024
+    };
+
+    void selectTitle(Select &query)
+    {
+        char buffer[BufferSize];
+
+        if (selectTitle(m_entity, buffer, 0) <= 0)
+            snprintf(buffer, sizeof(buffer), "%s", EntityValue::nullString());
+
+        m_title = buffer;
+        query.select(m_title.c_str(), "TITLE");
+        query.orderby("TITLE");
+    }
+
+    int selectTitle(const Entity &entity, char *buffer, int len) const
+    {
+        bool ok;
+        int res = 0;
+
+        for (auto i : entity.title())
+            switch (i.type())
+            {
+                case EntityTitle::Token::Text:
+                {
+                    if (len > 0)
+                        res = snprintf(buffer + len, BufferSize - len, " || '%s'", i.string().c_str());
+                    else
+                        res = snprintf(buffer + len, BufferSize - len, "'%s'", i.string().c_str());
+
+                    if (LIKELY(res > 0))
+                        len += res;
+                    else
+                        return -1;
+
+                    break;
+                }
+
+                case EntityTitle::Token::Property:
+                {
+                    ok = false;
+
+                    for (auto q : entity.properties())
+                        if (q.second.name == i.string())
+                        {
+                            if (q.second.entity.type() == Entity::Composite)
+                                res = selectTitle(q.second.entity, buffer, len);
+                            else
+                            {
+                                EntityTable table(q.second.entity);
+
+                                if (len > 0)
+                                    if (table.column(EntityTable::Value)->type != Table::Column::Text)
+                                        res = snprintf(buffer + len, BufferSize - len, " || CAST(%s.VALUE AS TEXT)", table.name());
+                                    else
+                                        res = snprintf(buffer + len, BufferSize - len, " || %s.VALUE", table.name());
+                                else
+                                    if (table.column(EntityTable::Value)->type != Table::Column::Text)
+                                        res = snprintf(buffer + len, BufferSize - len, "CAST(%s.VALUE AS TEXT)", table.name());
+                                    else
+                                        res = snprintf(buffer + len, BufferSize - len, "%s.VALUE", table.name());
+                            }
+
+                            if (LIKELY(res > 0))
+                                len += res;
+                            else
+                                return -1;
+
+                            ok = true;
+                            break;
+                        }
+
+                    if (!ok)
+                        return -1;
+
+                    break;
+                }
+            }
+
+        return len;
+    }
+
+private:
     Entity m_entity;
+    ::EFC::String m_title;
     EntityTable m_entityTable;
     PropertiesList m_properties;
 };
@@ -228,20 +319,21 @@ private:
         Value id;
         EntityValue value;
         DataSet::Columns::const_iterator column = m_dataSet.columns().begin();
-        DataSet::Columns::const_iterator columnProperty;
 
         (*column).value(id);
 
         if (entity.type() == Entity::Composite)
         {
-            value = EntityValue::createValue(entity, id);
+            DataSet::Columns::const_iterator columnProperty(column);
+
+            value = createCompositeValue(entity, id, ++columnProperty);
 
             if (UNLIKELY(value.isValid() == false))
                 return EntityValue();
 
             for (Entity::Id currentId = id, nextId = id; currentId == nextId; nextId = (*column).value(id))
             {
-                ++(columnProperty = column);
+                ++(++(columnProperty = column));
 
                 for (Entity::Properties::const_iterator i = entity.properties().begin(), end = entity.properties().end(); i != end; ++i)
                     property(value, (*i).second.entity, columnProperty);
@@ -255,7 +347,7 @@ private:
         }
         else
         {
-            value = Implementation::value(entity, id, ++column);
+            value = createSimpleValue(entity, id, ++column);
 
             if (!m_dataSet.next())
                 m_afterLast = true;
@@ -264,7 +356,7 @@ private:
         return value;
     }
 
-    EntityValue value(const Entity &entity, Entity::Id id, const DataSet::Columns::const_iterator &column) const
+    EntityValue createSimpleValue(const Entity &entity, Entity::Id id, const DataSet::Columns::const_iterator &column) const
     {
         Value val;
         ::EFC::Variant value;
@@ -272,7 +364,18 @@ private:
         (*column).value(val);
         get(val, entity, value);
 
-        return EntityValue::createValue(entity, id, value);
+        return EntityValue::createSimpleValue(entity, id, value);
+    }
+
+    EntityValue createCompositeValue(const Entity &entity, Entity::Id id, const DataSet::Columns::const_iterator &column) const
+    {
+        Value val;
+        ::EFC::Variant value;
+
+        (*column).value(val);
+        get(val, entity, value);
+
+        return EntityValue::createCompositeValue(entity, id, value);
     }
 
     void property(const EntityValue &value, const Entity &property, DataSet::Columns::const_iterator &column) const
@@ -304,7 +407,7 @@ private:
 
             if (property.type() == Entity::Composite)
             {
-                EntityValue localValue(EntityValue::createValue(property, id));
+                EntityValue localValue(EntityValue::createCompositeValue(property, id));
                 ++column;
 
                 for (Entity::Properties::const_iterator i = property.properties().begin(), end = property.properties().end(); i != end; ++i)
@@ -315,7 +418,7 @@ private:
             else
             {
                 ++column;
-                EntityValue::addValue(value, Implementation::value(property, id, column));
+                EntityValue::addValue(value, createSimpleValue(property, id, column));
                 ++column;
             }
         }
