@@ -1,10 +1,14 @@
 project (liquiddb)
 
+# Custom modules
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 # Project header
-project_static_library_header_default ()
+project_header_default ("POSITION_INDEPENDENT_CODE:YES")
 
 # 3rdparty
-list (APPEND ${PROJECT_NAME}_LIBS platform)
+find_package (Platform REQUIRED)
+include_directories (${PLATFORM_INCLUDE})
 
 find_package (Sqlite REQUIRED)
 include_directories (${SQLITE_INCLUDE})
@@ -16,9 +20,6 @@ add_subdirectory (src)
 # Target - liquiddb
 add_library(liquiddb STATIC ${${PROJECT_NAME}_SOURCES})
 target_link_libraries (liquiddb ${${PROJECT_NAME}_LIBS})
-
-# Version
-build_version_file (liquiddb 0.0.1)
 
 # Documentation
 add_documentation ("liquidDB" 0.0.1 "This library is a front-end for SQLite database")
@@ -41,3 +42,5 @@ install_header_files (liquiddb "src/ldb_Constraint.h:Constraint"
                                "src/ldb_UndoStack.h:UndoStack"
                                "src/ldb_Value.h:Value")
 install_target (liquiddb)
+install_cmake_files ("cmake/FindSqlite.cmake"
+                     "cmake/FindLiquidDb.cmake")
